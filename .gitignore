@@ -1,0 +1,6 @@
+# Ignore results from compiling assembly or c
+*.o
+*.bin
+*.elf
+*.map
+
