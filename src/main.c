@@ -8,10 +8,13 @@
 #define GPIOC_HIGH      (*((volatile uint32_t *) 0x40011004))
 #define GPIOC_SR        (*((volatile uint32_t *) 0x40011010))
 
+int i = 0;
+
 static void led_task(void *args)
 {
     while(1)
     {
+        i += 1;
         GPIOC_SR = (1 << 13);
         vTaskDelay(pdMS_TO_TICKS(1000));
         GPIOC_SR = (1 << 29);
