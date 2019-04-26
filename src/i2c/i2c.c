@@ -1,25 +1,45 @@
 #include "i2c.h"
 
+/* i2c_init() assumes that PB6 and PB7 are configured to be an alternate function pin */
 void i2c_init()
 {
-	_I2C_CR1 &= ~(1 << 1);	/* Set to i2c mode */
-	_I2C_CR1 &= ~(1 << 6);	/* Generall call disabled address 00h is ACKed */
-	/* bit 8 (START) and bit 9 (STOP) not sure yet. */
-	_I2C_CR1 |= (1 << 10);	/* Acknowledgement after a byte is received */
-	_I2C_CR1 &= ~(1 << 11);	/* POS acknowledge (N)ack controls the current byte in the shift register */
-	_I2C_CR1 &= ~(1 << 12);	/* Packet error checking off */
-	_I2C_CR1 &= ~(1 << 13); 	
-
-	_I2C_CR2 = 0;			/* Disable all interrupts */
-	_I2C_CR2 |= (1 << 3);	/* ABP clock frequency is 8 MHz */
-
-	_I2C_OAR1 |= (1 << 14);	/* Should ALWAYS be one according to the datasheet */
-	_I2C_OAR1 &= ~(1 << 15);	
-
-	_I2C_OAR2 = 0;			/* Only OAR1 is recognized in the 7 bit addressing mode */
-
+	_I2C1_CR2 = 0x8;	/* The peripheral clock frequency is 8 MHz */		
+	_I2C1_CR1 = 0x400;	/* Send acknowledgement after a byte is received */
 	
-	_I2C_CCR |= (1 << 14);	/* Fast mode duty cycle */
-	_I2C_CCR |= (1 << 15);	/* Fast mode I2C */
+	/*
+	 * Thigh = CCR * TPCLK1
+	 * CCR = Thigh / TPCLK1
+	 *
+ 	 * To get TPCLK1 we use f = 1 / t
+	 * 1 / 8000000 = 125 ns
+	 * This means that TPCLK1 is 125 ns.
+	 *
+	 * Thigh = Tscl / 2
+	 * To get Tscl we use Tscl = 1 / Fscl
+	 * If we want to generate 100 KHz SCL (Fscl = 1000000 Hz) then Tscl is 10 microseconds
+	 * Thigh = 10 us / 2 = 5000 ns
+	 * 
+	 * CCR = Thigh / TPCLK1
+	 *     = 5000 (ns) / 125 ns = 40
+	 * CCR should be 40 or 0x28 */
+	
+	_I2C1_CCR |= 0x28;	/* Generate 100 KHz serial clock speed */
+	
+	/* 
+	 * TRISE = (Trise / TPCLK1) + 1
+	 *       = 1000 (ns) / 125 (ns) + 1
+	 *       = 9 */
+	
+	_I2C1_TRISE = 0x9;	/* Maximum rise time */
+
+	_I2C1_OAR1 &= ~(0x80FF);	/* Use 7 bit slave addresses */
+	_I2C1_OAR1 |= (0x29 << 1);	/* TCS3472 uses I2C slave adderss 0x29 */
+
 		
+}
+
+
+void i2c_write(char byte)
+{
+	_I2C1_D
 }
