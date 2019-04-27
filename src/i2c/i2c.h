@@ -1,16 +1,48 @@
 #ifndef _I2C_H
 #define _I2C_H
 
+#include <stdint.h>
+
+/* Absolute register addresses */
 #define _I2C_CR1	(*((volatile unsigned long *) 0x40005400)) /* Control register 1*/
 #define _I2C_CR2	(*((volatile unsigned long *) 0x40005404)) /* Control register 2 */
 #define _I2C_OAR1	(*((volatile unsigned long *) 0x40005408)) /* Own address register 1 */
-#define _I2C_OAR2	(*((volatile unsigned long *) 0x4005540C)) /* Own address register 2 */
-#define _I2C_DR		(*((volatile unsigned long *) 0x40055410)) /* Data register */
-#define _I2C_SR1	(*((volatile unsigned long *) 0x40055414)) /* Status register 1 */
-#define _I2C_SR2	(*((volatile unsigned long *) 0x40055418)) /* Status register 2 */
-#define _I2C_CCR	(*((volatile unsigned long *) 0x4005541C)) /* Clock control register */
-#define _I2C_TRISE	(*((volatile unsigned long *) 0x40055420)) /* TRISE register */
+#define _I2C_OAR2	(*((volatile unsigned long *) 0x4000540C)) /* Own address register 2 */
+#define _I2C_DR		(*((volatile unsigned long *) 0x40005410)) /* Data register */
+#define _I2C_SR1	(*((volatile unsigned long *) 0x40005414)) /* Status register 1 */
+#define _I2C_SR2	(*((volatile unsigned long *) 0x40005418)) /* Status register 2 */
+#define _I2C_CCR	(*((volatile unsigned long *) 0x4000541C)) /* Clock control register */
+#define _I2C_TRISE	(*((volatile unsigned long *) 0x40005420)) /* TRISE register */
 
-/* RCC_APB1ENR */
+/* Error codes returned from library routines */
+#define I2C_OK		0	/* Everything is fine. No error occured */
+
+
+typedef enum 
+{
+	I2C_WRITE = 0,
+	I2C_READ
+} I2C_dir;
+
+void i2c_init();
+
+/*
+ * Begins a transmission by sending a start bit
+ * This function may only be called if the I2C1 module is not busy (e.g no communication is still going on) 
+ * If this function has been called previously, this function may only be called again after the i2c_stop_transmission() has been called
+ */
+uint8_t i2c_begin_transmission(uint8_t address, I2C_dir dir, uint8_t byte);
+
+/*
+ * Send a byte on the I2C bus.
+ * 
+ */
+uint8_t i2c_send_byte(uint8_t byte);
+
+/* 
+ * Send a STOP bit to the I2C slave
+ * This function may only be called if the i2c_begin_transmission() function has been called.
+ */
+uint8_t i2c_stop_transmission();
 
 #endif	/* _I2C_H */
