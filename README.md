@@ -30,7 +30,7 @@ For OpenOCD a new file should be made.
 stm32f1x.cfg in /usr/share/openocd/scripts/board/
 
 content
-`
+```
 # This is an STM32F103C8Tx board with a arm cortex mcu.
 # http://www.st.com/internet/evalboard/product/253215.jsp
 
@@ -41,7 +41,7 @@ transport select hla_swd
 source [find target/stm32f1x.cfg]
 
 reset_config srst_only
-`
+```
 
 
 ## Hierarchy
