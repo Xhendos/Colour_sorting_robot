@@ -54,6 +54,8 @@ int main(void)
 
 	while(1)
 	{
+		i2c_begin_transmission(0x29, I2C_WRITE, 0xFF);
+		i2c_stop_transmission();	
 	}
 	
 	return 0;					/* We should never reach this point */

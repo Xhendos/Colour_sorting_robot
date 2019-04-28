@@ -52,6 +52,24 @@ uint8_t i2c_begin_transmission(uint8_t address, I2C_dir dir, uint8_t byte)
 	_I2C_SR1;					
 	_I2C_SR2;					/* Dummy read to clear the _I2C_SR1 ADDR status bit */
 
+	_I2C_DR |= byte;			/* Transmit the first byte */
+	while(!(_I2C_SR1 & 0x04));	/* Wait untill the byte has been transfered */	
 	
+	return I2C_OK;
+}
+
+uint8_t i2c_send_byte(uint8_t byte)
+{
+	_I2C_DR |= byte;
+	while(!(_I2C_SR1 & 0x04));	/* Wait untill the byte has been transfered */
+
+	return I2C_OK;
+}
+
+uint8_t i2c_stop_transmission()
+{
+	_I2C_CR1 |= (1 << 9);		/* Generate a STOP condition by pulling the I2C data bus logic HIGH */
+	while(_I2C_CR1 & 0x200);	/* Wait untill the STOP condition has been send */
+
 	return I2C_OK;
 }
