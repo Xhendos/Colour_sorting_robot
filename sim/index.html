@@ -102,6 +102,21 @@
 									"f4t8", "f1t2", "t4f3",
 									"t6f4", "t8f1", "t2f2"];
 				});
+
+				$("#4").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t5").addClass("red");
+					$("#t7").addClass("green");
+					$("#t1").addClass("blue");
+					$("#t3").addClass("white");
+					instructions = [];
+				});
 			});
 		</script>
 	</head>
@@ -152,6 +167,7 @@
 				<button id="1">1</button>
 				<button id="2">2</button>
 				<button id="3">3</button>
+				<button id="4">4</button>
 			</div>
 		</div>
 	</body>
