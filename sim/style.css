@@ -1,0 +1,81 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	background-color: lightgrey;
+}
+
+#wrapper {
+	width: 600px;
+	margin: auto;
+	margin-top: 30px;
+}
+
+#board {
+	background-color: bisque;
+	border-collapse: collapse;
+	display: inline-block;
+	vertical-align: top;
+}
+
+#board td {
+	width: 100px;
+	height: 100px;
+	text-align: center;
+}
+
+.placeholder {
+	width: 60px;
+	height: 60px;
+	border-radius: 30px;
+	margin: auto;
+	border: 1px solid black;
+}
+
+.arm {
+	width: 60px;
+	height: 60px;
+	margin: auto;
+	border: 1px solid black;
+}
+
+.red {
+	background-color: red;
+	color: white;
+}
+
+.green {
+	background-color: green;
+	color: white;
+}
+
+.blue {
+	background-color: blue;
+	color: white;
+}
+
+.purple {
+	background-color: purple;
+	color: white;
+}
+
+.f {
+	opacity: 0.3;
+}
+
+#buttons {
+	display: inline-block;
+	vertical-align: top;
+	margin-left: 20px;
+}
+
+#buttons button {
+	width: 80px;
+	height: 24px;
+	text-align: center;
+	display: block;
+	margin-bottom: 10px;
+}
