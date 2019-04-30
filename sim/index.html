@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+
+	<body>
+		<div id="wrapper">
+			<table id="board">
+				<thead>
+					<script 
+					src="https://code.jquery.com/jquery-3.4.0.slim.min.js"
+					integrity="sha256-ZaXnYkHGqIhqTbJ6MB4l9Frs/r7U4jlx7ir8PJYBqbI="
+					crossorigin="anonymous">
+					</script>
+					<script>
+						var index = 0;
+						var instructions = ["t7->t8", "t8->f1", "t4->t3",
+											"t5->t4", "t4->f2", "t3->t4",
+											"t4->t5", "t5->t6", "t6->f4",
+											"t2->t3", "t3->t4", "t4->f3"];
+
+						$(window).on("load", function() {
+							$("#next").on("click", function() {
+								if (index == instructions.length) return;
+								var from = "#" + instructions[index].substring(0, 2);
+								var to = "#" + instructions[index].substring(4, 6);
+								var classes = $(from)[0].classList + "";
+								if (classes.includes("red")) {
+									$(from).removeClass("red")
+									$(to).addClass("red")
+								} else if (classes.includes("green")) {
+									$(from).removeClass("green")
+									$(to).addClass("green")
+								} else if (classes.includes("blue")) {
+									$(from).removeClass("blue")
+									$(to).addClass("blue")
+								} else if (classes.includes("purple")) {
+									$(from).removeClass("purple")
+									$(to).addClass("purple")
+								} else {
+									alert("Placeholder " + from + " does not hold a ball.")
+								}
+								if (to.includes("f")) {
+									$(to).removeClass("f");
+								}
+								console.log("[" + index + "] " + instructions[index]);
+								++index;
+							});
+
+							$("#reset").on("click", function() {
+								index = 0;
+
+								for (var i = 1; i <= 8; ++i) {								
+									$("#t" + i).removeClass("red");						
+									$("#t" + i).removeClass("green");						
+									$("#t" + i).removeClass("blue");						
+									$("#t" + i).removeClass("purple");
+								}
+
+								$("#f1").addClass("red f");
+								$("#f2").addClass("green f");
+								$("#f3").addClass("blue f");
+								$("#f4").addClass("purple f");
+
+								$("#t7").addClass("red");
+								$("#t5").addClass("green");
+								$("#t2").addClass("blue");
+								$("#t4").addClass("purple");
+							});
+						});
+					</script>
+				</thead>
+				<tbody>
+					<tr>
+						<td><div id="t7" class="placeholder">T7</div></td>
+						<td><div id="r6" class="arm">R6</div></td>
+						<td><div id="t6" class="placeholder">T6</div></td>
+						<td><div id="r5" class="arm">R5</div></td>
+						<td><div id="t5" class="placeholder">T5</div></td>
+					</tr>
+					<tr>
+						<td><div id="r7" class="arm">R7</div></td>
+						<td><div id="f4" class="placeholder">F4</div></td>
+						<td></td>
+						<td><div id="f3" class="placeholder">F3</div></td>
+						<td><div id="r4" class="arm">R4</div></td>
+					</tr>
+					<tr>
+						<td><div id="t8" class="placeholder">T8</div></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td><div id="t4" class="placeholder">T4</div></td>
+					</tr>
+					<tr>
+						<td><div id="r8" class="arm">R8</div></td>
+						<td><div id="f1" class="placeholder">F1</div></td>
+						<td></td>
+						<td><div id="f2" class="placeholder">F2</div></td>
+						<td><div id="r3" class="arm">R3</div></td>
+					</tr>
+					<tr>
+						<td><div id="t1" class="placeholder">T1</div></td>
+						<td><div id="r1" class="arm">R1</div></td>
+						<td><div id="t2" class="placeholder">T2</div></td>
+						<td><div id="r2" class="arm">R2</div></td>
+						<td><div id="t3" class="placeholder">T3</div></td>
+					</tr>
+				</tbody>
+			</table><div id="buttons">
+				<button id="next">Next</button>
+				<button id="reset">Reset</button>
+			</div>
+		</div>
+	</body>
+</html>
