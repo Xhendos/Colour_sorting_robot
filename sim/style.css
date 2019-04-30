@@ -42,28 +42,52 @@ body {
 	border: 1px solid black;
 }
 
+.final-red {
+	background-color: red;
+	color: white;
+	opacity: 0.3;
+}
+
+.final-green {
+	background-color: green;
+	color: white;
+	opacity: 0.3;
+}
+
+.final-blue {
+	background-color: blue;
+	color: white;
+	opacity: 0.3;
+}
+
+.final-white {
+	background-color: white;
+	color: black;
+	opacity: 0.3;
+}
+
 .red {
 	background-color: red;
 	color: white;
+	opacity: 1;
 }
 
 .green {
 	background-color: green;
 	color: white;
+	opacity: 1;
 }
 
 .blue {
 	background-color: blue;
 	color: white;
+	opacity: 1;
 }
 
-.purple {
-	background-color: purple;
-	color: white;
-}
-
-.f {
-	opacity: 0.3;
+.white {
+	background-color: white;
+	color: black;
+	opacity: 1;
 }
 
 #buttons {
