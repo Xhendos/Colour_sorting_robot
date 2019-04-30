@@ -2,75 +2,128 @@
 <html>
 	<head>
 		<link rel="stylesheet" type="text/css" href="style.css">
-	</head>
+		<script
+		src="https://code.jquery.com/jquery-3.4.0.slim.min.js"
+		integrity="sha256-ZaXnYkHGqIhqTbJ6MB4l9Frs/r7U4jlx7ir8PJYBqbI="
+		crossorigin="anonymous">
+		</script>
+		<script>
+			var colours = ["red", "green", "blue", "white"];
+			var temps = ["#t1", "#t2", "#t3", "#t4", "#t5", "#t6", "#t7", "#t8"];
+			var finals = ["#f1", "#f2", "#f3", "#f4"];
 
+			var index;
+			var instructions;
+
+			function reset() {
+				index = 0;
+				instructions = [];
+				temps.forEach(function(temp) {
+					colours.forEach(function(colour) {
+						$(temp).removeClass(colour);
+					});
+				});
+				finals.forEach(function(final) {
+					colours.forEach(function(colour) {
+						$(final).removeClass(colour);
+						$(final).removeClass("final-" + colour);
+					});
+				});
+			}
+
+			$(window).on("load", function() {
+				$("#next").on("click", function() {
+					if (index == instructions.length) return;
+					console.log("[" + index + "] " + instructions[index]);
+					var from = "#" + instructions[index].substring(0, 2);
+					var to = "#" + instructions[index].substring(2, 4);
+					//Concatenating an empty string makes this work.
+					var classes = $(from)[0].classList + "";
+					colours.forEach(function(colour) {
+						if (classes.includes(colour)
+							&& !classes.includes("final-" + colour)) {
+							$(from).removeClass(colour);
+							$(to).addClass(colour);
+						}
+					});
+					++index;
+				});
+
+				$("#1").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t7").addClass("red");
+					$("#t5").addClass("green");
+					$("#t2").addClass("blue");
+					$("#t4").addClass("white");
+					instructions = ["t7t8", "t8f1", "t4t3",
+									"t5t4", "t4f2", "t3t4",
+									"t4t5", "t5t6", "t6f4",
+									"t2t3", "t3t4", "t4f3"];
+				});
+
+				$("#2").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t8").addClass("green");
+					$("#t1").addClass("blue");
+					$("#t2").addClass("white");
+					$("#t3").addClass("red");
+					instructions = ["t8f1", "t1t8", "t8f4",
+									"f4t6", "t6f3", "t2t1",
+									"t1t8", "t8f4", "f1t2",
+									"t2f2", "t3t2", "t2f1"];
+				});
+
+				$("#3").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-blue");
+					$("#f2").addClass("final-red");
+					$("#f3").addClass("final-white");
+					$("#f4").addClass("final-green");
+
+					$("#t2").addClass("white");
+					$("#t4").addClass("green");
+					$("#t6").addClass("blue");
+					$("#t8").addClass("red");
+					instructions = ["t2f2", "t4f3", "t6f4",
+									"t8f1", "f2t4", "f3t6",
+									"f4t8", "f1t2", "t4f3",
+									"t6f4", "t8f1", "t2f2"];
+				});
+
+				$("#4").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t5").addClass("red");
+					$("#t7").addClass("green");
+					$("#t1").addClass("blue");
+					$("#t3").addClass("white");
+					instructions = [];
+				});
+			});
+		</script>
+	</head>
 	<body>
 		<div id="wrapper">
 			<table id="board">
-				<thead>
-					<script 
-					src="https://code.jquery.com/jquery-3.4.0.slim.min.js"
-					integrity="sha256-ZaXnYkHGqIhqTbJ6MB4l9Frs/r7U4jlx7ir8PJYBqbI="
-					crossorigin="anonymous">
-					</script>
-					<script>
-						var index = 0;
-						var instructions = ["t7->t8", "t8->f1", "t4->t3",
-											"t5->t4", "t4->f2", "t3->t4",
-											"t4->t5", "t5->t6", "t6->f4",
-											"t2->t3", "t3->t4", "t4->f3"];
-
-						$(window).on("load", function() {
-							$("#next").on("click", function() {
-								if (index == instructions.length) return;
-								var from = "#" + instructions[index].substring(0, 2);
-								var to = "#" + instructions[index].substring(4, 6);
-								var classes = $(from)[0].classList + "";
-								if (classes.includes("red")) {
-									$(from).removeClass("red")
-									$(to).addClass("red")
-								} else if (classes.includes("green")) {
-									$(from).removeClass("green")
-									$(to).addClass("green")
-								} else if (classes.includes("blue")) {
-									$(from).removeClass("blue")
-									$(to).addClass("blue")
-								} else if (classes.includes("purple")) {
-									$(from).removeClass("purple")
-									$(to).addClass("purple")
-								} else {
-									alert("Placeholder " + from + " does not hold a ball.")
-								}
-								if (to.includes("f")) {
-									$(to).removeClass("f");
-								}
-								console.log("[" + index + "] " + instructions[index]);
-								++index;
-							});
-
-							$("#reset").on("click", function() {
-								index = 0;
-
-								for (var i = 1; i <= 8; ++i) {								
-									$("#t" + i).removeClass("red");						
-									$("#t" + i).removeClass("green");						
-									$("#t" + i).removeClass("blue");						
-									$("#t" + i).removeClass("purple");
-								}
-
-								$("#f1").addClass("red f");
-								$("#f2").addClass("green f");
-								$("#f3").addClass("blue f");
-								$("#f4").addClass("purple f");
-
-								$("#t7").addClass("red");
-								$("#t5").addClass("green");
-								$("#t2").addClass("blue");
-								$("#t4").addClass("purple");
-							});
-						});
-					</script>
-				</thead>
+				<thead></thead>
 				<tbody>
 					<tr>
 						<td><div id="t7" class="placeholder">T7</div></td>
@@ -108,9 +161,13 @@
 						<td><div id="t3" class="placeholder">T3</div></td>
 					</tr>
 				</tbody>
-			</table><div id="buttons">
+			</table><!--
+			--><div id="buttons">
 				<button id="next">Next</button>
-				<button id="reset">Reset</button>
+				<button id="1">1</button>
+				<button id="2">2</button>
+				<button id="3">3</button>
+				<button id="4">4</button>
 			</div>
 		</div>
 	</body>
