@@ -32,16 +32,42 @@
 			}
 
 			$(window).on("load", function() {
+				//Draw graph on canvas.
+				var c = document.getElementById("canvas");
+				var ct = c.getContext("2d");
+				ct.lineWidth = 6;
+				ct.beginPath();
+				ct.moveTo(50, 50);
+				ct.lineTo(450, 50);
+				ct.lineTo(450, 450);
+				ct.lineTo(50, 450);
+				ct.lineTo(50, 50);
+				ct.moveTo(250, 50);
+				ct.lineTo(450, 250);
+				ct.lineTo(250, 450);
+				ct.lineTo(50, 250);
+				ct.lineTo(250, 50);
+				ct.moveTo(50, 50);
+				ct.lineTo(150, 150);
+				ct.moveTo(450, 50);
+				ct.lineTo(350, 150);
+				ct.moveTo(450, 450);
+				ct.lineTo(350, 350);
+				ct.moveTo(50, 450);
+				ct.lineTo(150, 350);
+				ct.stroke();
+
+				$("#reset").on("click", function() {
+					reset();
+				});
+
 				$("#next").on("click", function() {
 					if (index == instructions.length) return;
 					console.log("[" + index + "] " + instructions[index]);
 					var from = "#" + instructions[index].substring(0, 2);
 					var to = "#" + instructions[index].substring(2, 4);
-					//Concatenating an empty string makes this work.
-					var classes = $(from)[0].classList + "";
 					colours.forEach(function(colour) {
-						if (classes.includes(colour)
-							&& !classes.includes("final-" + colour)) {
+						if ($(from).hasClass(colour)) {
 							$(from).removeClass(colour);
 							$(to).addClass(colour);
 						}
@@ -117,11 +143,23 @@
 					$("#t3").addClass("white");
 					instructions = [];
 				});
+
+				$("#graph").on("click", function() {
+					if ($(".placeholder").hasClass("node")) {
+						$(".placeholder").removeClass("node")
+					} else {
+						$(".placeholder").addClass("node")
+					}
+					$(".arm").toggle();
+					$("#canvas").toggle();
+				});
 			});
 		</script>
 	</head>
 	<body>
 		<div id="wrapper">
+			<div id="background"></div>
+			<canvas id="canvas" width="500" height="500" style="display: none;"></canvas>
 			<table id="board">
 				<thead></thead>
 				<tbody>
@@ -163,11 +201,13 @@
 				</tbody>
 			</table><!--
 			--><div id="buttons">
+				<button id="reset">Reset</button>
 				<button id="next">Next</button>
 				<button id="1">1</button>
 				<button id="2">2</button>
 				<button id="3">3</button>
 				<button id="4">4</button>
+				<button id="graph">Graph</button>
 			</div>
 		</div>
 	</body>
