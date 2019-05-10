@@ -15,7 +15,10 @@ body {
 }
 
 #board {
-	background-color: bisque;
+	position: fixed;
+	width: 500px;
+	height: 500px;
+	background-color: transparent;
 	border-collapse: collapse;
 	display: inline-block;
 	vertical-align: top;
@@ -91,9 +94,11 @@ body {
 }
 
 #buttons {
+	position: top;
 	display: inline-block;
 	vertical-align: top;
-	margin-left: 20px;
+	margin-left: 520px;
+	width: 80px;
 }
 
 #buttons button {
@@ -102,4 +107,23 @@ body {
 	text-align: center;
 	display: block;
 	margin-bottom: 10px;
+}
+
+#canvas {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+}
+
+#background {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+	background-color: bisque;
+}
+
+.node {
+	background-color: black;
+	color: white;
+	opacity: 1;
 }
