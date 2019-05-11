@@ -30,18 +30,30 @@ void i2c_init();
  * Begins a transmission by sending a start bit
  * This function may only be called if the I2C1 module is not busy (e.g no communication is still going on) 
  * If this function has been called previously, this function may only be called again after the i2c_stop_transmission() has been called
+ *
+ * _________    ___________________________         _______     _____________________________             _
+ *         |    |                         |         |     |     |                           |             |
+ *         |    |                         |         |     |     |                           |             |
+ *         |____|                         |_________|     |_____|                           |_____________|
+ *         Start bit     Slave address (7 bits)       R/W    A                   byte (8 bits)             
  */
 uint8_t i2c_begin_transmission(uint8_t address, I2C_dir dir, uint8_t byte);
 
 /*
  * Send a byte on the I2C bus.
- * 
+ *
  */
 uint8_t i2c_send_byte(uint8_t byte);
 
 /* 
  * Send a STOP bit to the I2C slave
  * This function may only be called if the i2c_begin_transmission() function has been called.
+ *
+ *              _________
+ *              |
+ *              |
+ * _____________|
+ *                Stop bit
  */
 uint8_t i2c_stop_transmission();
 
