@@ -14,6 +14,15 @@ body {
 	margin-top: 30px;
 }
 
+td {
+	width: 100px;
+	height: 100px;
+}
+
+.color-white {
+	color: white;
+}
+
 #board {
 	position: fixed;
 	width: 500px;
@@ -24,10 +33,19 @@ body {
 	vertical-align: top;
 }
 
-#board td {
+#overlay {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+	background-color: transparent;
+	border-collapse: collapse;
+	display: inline-block;
+	vertical-align: top;
+}
+
+#overlay td {
 	width: 100px;
 	height: 100px;
-	text-align: center;
 }
 
 .placeholder {
@@ -36,6 +54,8 @@ body {
 	border-radius: 30px;
 	margin: auto;
 	border: 1px solid black;
+	line-height: 60px;
+	text-align: center;
 }
 
 .arm {
@@ -43,6 +63,20 @@ body {
 	height: 60px;
 	margin: auto;
 	border: 1px solid black;
+	line-height: 60px;
+	text-align: center;
+}
+
+#board .placeholder {
+	width: 40px;
+	height: 40px;
+	border-radius: 20px;
+	line-height: 40px;
+	text-align: center;
+}
+
+#overlay .placeholder {
+	border: none;
 }
 
 .final-red {
