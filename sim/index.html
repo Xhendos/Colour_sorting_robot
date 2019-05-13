@@ -145,10 +145,15 @@
 				});
 
 				$("#graph").on("click", function() {
-					if ($(".placeholder").hasClass("node")) {
-						$(".placeholder").removeClass("node")
+					if ($("#overlay .placeholder").hasClass("node")) {
+						$("#overlay .placeholder").removeClass("node")
 					} else {
-						$(".placeholder").addClass("node")
+						$("#overlay .placeholder").addClass("node")
+					}
+					if ($("#board .placeholder").hasClass("color-white")) {
+						$("#board .placeholder").removeClass("color-white")
+					} else {
+						$("#board .placeholder").addClass("color-white")
 					}
 					$(".arm").toggle();
 					$("#canvas").toggle();
@@ -160,6 +165,46 @@
 		<div id="wrapper">
 			<div id="background"></div>
 			<canvas id="canvas" width="500" height="500" style="display: none;"></canvas>
+			<table id="overlay">
+				<thead></thead>
+				<tbody>
+					<tr>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+					</tr>
+					<tr>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+					</tr>
+					<tr>
+						<td><div class="placeholder"></div></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td><div class="placeholder"></div></td>
+					</tr>
+					<tr>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+					</tr>
+					<tr>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+					</tr>
+				</tbody>
+			</table>
 			<table id="board">
 				<thead></thead>
 				<tbody>
