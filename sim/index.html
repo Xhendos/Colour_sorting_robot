@@ -75,6 +75,19 @@
 					++index;
 				});
 
+				$("#previous").on("click", function() {
+					if (index == 0) return;
+					console.log("[" + --index + "] " + instructions[index]);
+					var from = "#" + instructions[index].substring(0, 2);
+					var to = "#" + instructions[index].substring(2, 4);
+					colours.forEach(function(colour) {
+						if ($(to).hasClass(colour)) {
+							$(to).removeClass(colour);
+							$(from).addClass(colour);
+						}
+					});
+				});
+
 				$("#1").on("click", function() {
 					reset();
 
@@ -248,6 +261,7 @@
 			--><div id="buttons">
 				<button id="reset">Reset</button>
 				<button id="next">Next</button>
+				<button id="previous">Previous</button>
 				<button id="1">1</button>
 				<button id="2">2</button>
 				<button id="3">3</button>
