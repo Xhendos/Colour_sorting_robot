@@ -81,8 +81,26 @@ elif direction == 'v':
     if ta.y > tb.y:
         x = ta.x
         y = ta.y - 1
-    else:
+        arm = arms[x][y]
+        if arm.cardinal == 'e':
+            r1 = 240
+            r2 = 60
+            r3 = 150
+        elif arm.cardinal == 'w':
+            r1 = 60
+            r2 = 240
+            r3 = 150
+    elif ta.y < tb.y:
         x = ta.x
         y = ta.y + 1
+        arm = arms[x][y]
+        if arm.cardinal == 'e':
+            r1 = 60
+            r2 = 240
+            r3 = 150
+        elif arm.cardinal == 'w':
+            r1 = 240
+            r2 = 60
+            r3 = 150
 
 print(str(r1) + str(r2) + str(r3))
