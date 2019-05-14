@@ -11,6 +11,6 @@
 #define _USART_CR3		(*((volatile unsigned long *) 0x40013814))	/* Control register 3 */
 #define _USART_GTPR		(*((volatile unsigned long *) 0x40013818))	/* Guard time and prescaler register */
 
-
+void uart_init();
 
 #endif	/* _UART_H */

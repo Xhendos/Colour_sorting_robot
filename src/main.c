@@ -12,9 +12,17 @@
 #define	_RCC_APB2ENR	(*((volatile unsigned long *) 0x40021018))		/* Peripheral clock enable register */
 #define _RCC_APB1ENR	(*((volatile unsigned long *) 0x4002101C))		/* Peripheral clock enable register */
 #define _RCC_APB1RSTR	(*((volatile unsigned long *) 0x40021010))		/* Peripheral reset register */
+#define _RCC_APB2RSTR	(*((volatile unsigned long *) 0x4002100C))		/* APB2 peripheral reset register */
 
+
+/* GPIOA */
+#define _GPIOA_CRH		(*((volatile unsigned long *) 0x40010804))		/* Port configuration register high */
+#define	_GPIOA_BSRR		(*((volatile unsigned long *) 0x40010810))		/* set/reset register */
+
+/* GPIOB */
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
+
 
 int main(void)
 {
@@ -47,8 +55,15 @@ int main(void)
 	_GPIOB_CRL |= 0x33000000;	/* PB6 and PB7 are ouput (this MUST be the case BEFORE setting the alternative function */
 	_GPIOB_CRL |= 0xCC000000;	/* PB6 and PB7 are alternative function */		
 
+	_GPIOA_CRH = 0;
+	_GPIOA_CRH |= 0x10;			/* PA9 is an output pin */
+	_GPIOA_CRH |= 0x480;		/* PA9 is alternate function push pull, PA10 is input floating */ 
+
 	_RCC_APB1RSTR |= ( 1 << 21);	/* Reset the I2C1 module */
-	_RCC_APB1RSTR &= ~(1 << 21);	/* Stop resetting the I2C1 module */
+	_RCC_APB1RSTR &= ~(1 << 21);	/* Stop resetting the I2C1 module */	
+
+	_RCC_APB2RSTR |= (1 << 14);	/* Reset the USART1 module */
+	_RCC_APB2RSTR &= ~(1 << 14);/* Stop resetting the USART1 module */
 
 	i2c_init();					/* Initialise the I2C1 module */
 
