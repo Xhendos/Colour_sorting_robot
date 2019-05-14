@@ -5,6 +5,7 @@
 #include "task.h"
 
 #include "i2c/i2c.h"
+#include "uart/uart.h"
 
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
@@ -66,6 +67,7 @@ int main(void)
 	_RCC_APB2RSTR &= ~(1 << 14);/* Stop resetting the USART1 module */
 
 	i2c_init();					/* Initialise the I2C1 module */
+	uart_init();				/* Initialise the USART1 module */
 
 	while(1)
 	{

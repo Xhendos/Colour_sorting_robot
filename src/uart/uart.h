@@ -2,6 +2,7 @@
 #define _UART_H
 
 #include <stdio.h>
+#include <stdint.h>
 
 #define	_USART_SR		(*((volatile unsigned long *) 0x40013800))	/* Status register */
 #define _USART_DR		(*((volatile unsigned long *) 0x40013804))	/* Data register */
@@ -12,5 +13,8 @@
 #define _USART_GTPR		(*((volatile unsigned long *) 0x40013818))	/* Guard time and prescaler register */
 
 void uart_init();
+
+uint8_t uart_send_byte(uint8_t byte);
+
 
 #endif	/* _UART_H */
