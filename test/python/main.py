@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 class Point(object):
     def __init__(self, x, y):
         self.x = x
@@ -14,15 +16,23 @@ class Arm(object):
         self.y = y
         self.cardinal = c
 
-arms = [[0]*5 for i in range(5)]
-arms[1][0] = Arm(1, 0, 'n')
+arms = [[0] * 5 for i in range(5)]
+arms[1][4] = Arm(1, 4, 's')
 
-t6 = Placeholder(2, 4)
-t7 = Placeholder(0, 4)
-a6 = Arm(1, 4, 's')
+placeholders = {}
+placeholders['t1'] = Placeholder(0, 0)
+placeholders['t2'] = Placeholder(2, 0)
+placeholders['t6'] = Placeholder(2, 4)
+placeholders['t7'] = Placeholder(0, 4)
 
-dx = abs(t6.x - t7.x)
-dy = abs(t6.y - t7.y)
+ta = placeholders['t6']
+tb = placeholders['t7']
+
+print(str(ta.x) + str(ta.y))
+print(str(tb.x) + str(tb.y))
+
+dx = abs(ta.x - tb.x)
+dy = abs(ta.y - tb.y)
 
 if dx == 2:
     direction = 'h'
@@ -30,7 +40,18 @@ elif dy == 2:
     direction = 'v'
 
 if direction == 'h':
-    if t6.x > t7.x:
-        a = Point(t6.x - 1, t6.y)
-arm = arms[1][0]
-print(str(arm.x) + str(arm.y) + arm.cardinal)
+    if ta.x > tb.x:
+        x = ta.x - 1
+        y = ta.y
+    else:
+        x = ta.x + 1
+        y = ta.y
+elif direction == 'v':
+    if ta.y > tb.y:
+        x = ta.x
+        y = ta.y - 1
+    else:
+        x = ta.x
+        y = ta.y + 1
+
+print(arms[x][y].x)    
