@@ -57,8 +57,10 @@ if abs(dx) == 2:
     direction = 'h' #horizontal
 elif abs(dy) == 2:
     direction = 'v' #vertical
-else:
+elif abs(dx) + abs(dy) == 2:
     direction = 's' #slanted
+else:
+    exit()
 
 if direction == 'h':
     if ta.x > tb.x:
