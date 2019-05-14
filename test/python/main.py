@@ -17,6 +17,8 @@ class Arm(object):
         self.x = x
         self.y = y
         self.cardinal = c
+    def print(self):
+        print("(" + str(self.x) + ", " + str(self.y) + ")")
 #Arms
 arms = [[0] * 5 for i in range(5)]
 arms[1][0] = Arm(1, 0, 'n')
@@ -38,19 +40,25 @@ placeholders['t5'] = Placeholder(4, 4)
 placeholders['t6'] = Placeholder(2, 4)
 placeholders['t7'] = Placeholder(0, 4)
 placeholders['t8'] = Placeholder(0, 2)
+placeholders['f1'] = Placeholder(1, 1)
+placeholders['f2'] = Placeholder(3, 1)
+placeholders['f3'] = Placeholder(3, 3)
+placeholders['f4'] = Placeholder(1, 3)
 
 #Input: ta->tb
 ta = placeholders[sys.argv[1]]
 tb = placeholders[sys.argv[2]]
 
 #Program
-dx = abs(ta.x - tb.x)
-dy = abs(ta.y - tb.y)
+dx = ta.x - tb.x
+dy = ta.y - tb.y
 
-if dx == 2:
-    direction = 'h'
-elif dy == 2:
-    direction = 'v'
+if abs(dx) == 2:
+    direction = 'h' #horizontal
+elif abs(dy) == 2:
+    direction = 'v' #vertical
+else:
+    direction = 's' #slanted
 
 if direction == 'h':
     if ta.x > tb.x:
@@ -102,5 +110,75 @@ elif direction == 'v':
             r1 = 240
             r2 = 60
             r3 = 150
-
+elif direction == 's':
+    p1 = Point(tb.x + dx, tb.y)
+    p2 = Point(tb.x, tb.y + dy)
+    arm = arms[p1.x][p1.y]
+    if arm == 0:
+        arm = arms[p2.x][p2.y]
+    if arm.cardinal == 'n':
+        if arm.x > ta.x:
+            r1 = 240
+            r2 = 150
+            r3 = 150
+        elif arm.y < ta.y:
+            r1 = 150
+            if arm.x < tb.x:
+                r2 = 60
+            else:
+                r2 = 240
+            r3 = 150
+        elif arm.x < ta.x:
+            r1 = 60
+            r2 = 150
+            r3 = 150
+    elif arm.cardinal == 'e':
+        if arm.y < ta.y:
+            r1 = 240
+            r2 = 150
+            r3 = 150
+        elif arm.x < ta.x:
+            r1 = 150
+            if arm.y < tb.y:
+                r2 = 240
+            else:
+                r2 = 60
+            r3 = 150
+        elif arm.y > ta.y:
+            r1 = 60
+            r2 = 150
+            r3 = 150
+    elif arm.cardinal == 's':
+        if arm.x < ta.x:
+            r1 = 240
+            r2 = 150
+            r3 = 150
+        elif arm.y > ta.y:
+            r1 = 150
+            if arm.x < tb.x:
+                r2 = 240
+            else:
+                r2 = 60
+            r3 = 150
+        elif arm.x > ta.x:
+            r1 = 60
+            r2 = 150
+            r3 = 150
+    elif arm.cardinal == 'w':
+        if arm.y > ta.y:
+            r1 = 240
+            r2 = 150
+            r3 = 150
+        elif arm.x > ta.x:
+            r1 = 150
+            if arm.y < tb.y:
+                r2 = 60
+            else:
+                r2 = 240
+            r3 = 150
+        elif arm.y < ta.y:
+            r1 = 60
+            r2 = 150
+            r3 = 150
+arm.print()
 print(str(r1) + str(r2) + str(r3))
