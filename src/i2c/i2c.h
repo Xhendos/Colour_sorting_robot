@@ -30,7 +30,6 @@ void i2c_init();
  * Begins a transmission by sending a start bit
  * This function may only be called if the I2C1 module is not busy (e.g no communication is still going on) 
  * If this function has been called previously, this function may only be called again after the i2c_stop_transmission() has been called
- *
  * _________    ___________________________         _______     _____________________________             _
  *         |    |                         |         |     |     |                           |             |
  *         |    |                         |         |     |     |                           |             |

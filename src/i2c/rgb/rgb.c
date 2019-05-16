@@ -16,20 +16,24 @@ void init()
        return ;
 
     /* Set intergration time */
-    i2c_begin_transmission(TCS34725_ATIME, I2C_WRITE, TCS34725_ATIME_2_4MS);
+    i2c_begin_transmission(TCS34725_ADDRESS, I2C_WRITE, TCS34725_ATIME);
+    i2c_send_byte(TCS34725_ATIME_2_4MS);
     i2c_stop_transmission();
 
     /* Set gain */
-    i2c_begin_transmission(TCS34725_CONTROL, I2C_WRITE, TCS34725_CONTROL_GAIN_1);
+    i2c_begin_transmission(TCS34725_ADDRESS, I2C_WRITE, TCS34725_CONTROL);
+    i2c_send_byte(TCS34725_CONTROL_GAIN_1);
     i2c_stop_transmission();
 
     /* Note: by default, the device is in power down mode on bootup */
-    i2c_begin_transmission(TCS34725_ENABLE, I2C_WRITE, TCS34725_ENABLE_PON);
+    i2c_begin_transmission(TCS34725_ADDRESS, I2C_WRITE, TCS34725_ENABLE);
+    i2c_send_byte(TCS34725_ENABLE_PON);
     i2c_stop_transmission();
     vTaskDelay(pdMS_TO_TICKS(3));
 
     /* Enables the adc */
-    i2c_begin_transmission(TCS34725_ENABLE, I2C_WRITE, TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN);
+    i2c_begin_transmission(TCS34725_ADDRESS, I2C_WRITE, TCS34725_ENABLE);
+    i2c_send_byte(TCS34725_ENABLE_PON | TCS34725_ENABLE_AEN);
     i2c_stop_transmission();
     vTaskDelay(pdMS_TO_TICKS(3));
 }
