@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<meta charset="UTF-8">
 		<link rel="stylesheet" type="text/css" href="style.css">
 		<script
 		src="https://code.jquery.com/jquery-3.4.0.slim.min.js"
@@ -29,6 +30,7 @@
 						$(final).removeClass("final-" + colour);
 					});
 				});
+				$("#input").hide();
 			}
 
 			$(window).on("load", function() {
@@ -155,6 +157,7 @@
 					$("#t1").addClass("blue");
 					$("#t3").addClass("white");
 					instructions = [];
+					$("#input").toggle();
 				});
 
 				$("#graph").on("click", function() {
@@ -170,6 +173,10 @@
 					}
 					$(".arm").toggle();
 					$("#canvas").toggle();
+				});
+
+				$("#input").on("input", function() {
+					instructions = $("#input").val().split(" ");
 				});
 			});
 		</script>
@@ -268,6 +275,7 @@
 				<button id="4">4</button>
 				<button id="graph">Graph</button>
 			</div>
+			<textarea id="input" style="display: none;" placeholder="t1t8 t8f4 f4t6 t6f3..."></textarea>
 		</div>
 	</body>
 </html>

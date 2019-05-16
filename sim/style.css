@@ -128,7 +128,7 @@ td {
 }
 
 #buttons {
-	position: top;
+	position: fixed;
 	display: inline-block;
 	vertical-align: top;
 	margin-left: 520px;
@@ -160,4 +160,14 @@ td {
 	background-color: black;
 	color: white;
 	opacity: 1;
+}
+
+#input {
+	width: 500px;
+	height: 100px;
+	margin-top: 520px;
+	max-width: 500px;
+	min-width: 500px;
+	min-height: 100px;
+	padding: 5px;
 }
