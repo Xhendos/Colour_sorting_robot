@@ -57,8 +57,10 @@ int main(void)
 	_GPIOB_CRL |= 0xCC000000;	/* PB6 and PB7 are alternative function */		
 
 	_GPIOA_CRH = 0;
-	_GPIOA_CRH |= 0x10;			/* PA9 is an output pin */
-	_GPIOA_CRH |= 0x480;		/* PA9 is alternate function push pull, PA10 is input floating */ 
+	_GPIOA_CRH |= 0x30;			/* PA9 is an output pin */
+	_GPIOA_CRH &= ~(0x300);		/* PA10 is an input pin */
+	_GPIOA_CRH |= 0x80;			/* PA9 is an alternative function push pull pin */
+	_GPIOA_CRH |= 0x400;		/* PA10 is an floating pin */
 
 	_RCC_APB1RSTR |= ( 1 << 21);	/* Reset the I2C1 module */
 	_RCC_APB1RSTR &= ~(1 << 21);	/* Stop resetting the I2C1 module */	
@@ -71,8 +73,7 @@ int main(void)
 
 	while(1)
 	{
-		i2c_begin_transmission(0x29, I2C_WRITE, 0xFF);
-		i2c_stop_transmission();	
+		uart_send_byte(0xAA);
 	}
 	
 	return 0;					/* We should never reach this point */
