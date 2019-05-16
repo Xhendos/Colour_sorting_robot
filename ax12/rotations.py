@@ -13,22 +13,23 @@ class Placeholder(object):
         self.y = y
 
 class Arm(object):
-    def __init__(self, x, y, c):
+    def __init__(self, x, y, c, n):
         self.x = x
         self.y = y
         self.cardinal = c
+        self.n = n
     def print(self):
-        print("(" + str(self.x) + ", " + str(self.y) + ")")
+        print("r" + str(self.n) + " (" + str(self.x) + ", " + str(self.y) + ")")
 #Arms
 arms = [[0] * 5 for i in range(5)]
-arms[1][0] = Arm(1, 0, 'n')
-arms[3][0] = Arm(3, 0, 'n')
-arms[4][1] = Arm(4, 1, 'w')
-arms[4][3] = Arm(4, 3, 'w')
-arms[3][4] = Arm(3, 4, 's')
-arms[1][4] = Arm(1, 4, 's')
-arms[0][3] = Arm(0, 3, 'e')
-arms[0][1] = Arm(0, 1, 'e')
+arms[1][0] = Arm(1, 0, 'n', 1)
+arms[3][0] = Arm(3, 0, 'n', 2)
+arms[4][1] = Arm(4, 1, 'w', 3)
+arms[4][3] = Arm(4, 3, 'w', 4)
+arms[3][4] = Arm(3, 4, 's', 5)
+arms[1][4] = Arm(1, 4, 's', 6)
+arms[0][3] = Arm(0, 3, 'e', 7)
+arms[0][1] = Arm(0, 1, 'e', 8)
 
 #Placeholders
 placeholders = {}
@@ -183,4 +184,4 @@ elif direction == 's':
             r2 = 150
             r3 = 150
 arm.print()
-print(str(r1) + str(r2) + str(r3))
+print(str(r1) + " " +  str(r2) + " " + str(r3))
