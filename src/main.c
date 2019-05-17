@@ -24,7 +24,6 @@
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
 
-
 int main(void)
 {
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
@@ -56,6 +55,9 @@ int main(void)
 	_GPIOB_CRL |= 0x33000000;	/* PB6 and PB7 are ouput (this MUST be the case BEFORE setting the alternative function */
 	_GPIOB_CRL |= 0xCC000000;	/* PB6 and PB7 are alternative function */		
 
+	_GPIOB_CRL |= 0x01;			/* PB0 is an output pin */
+	_GPIOB_CRL |= 0x04;			/* PB0 is an general purpose open drain pin */
+
 	_GPIOA_CRH = 0;
 	_GPIOA_CRH |= 0x30;			/* PA9 is an output pin */
 	_GPIOA_CRH &= ~(0x300);		/* PA10 is an input pin */
@@ -73,7 +75,25 @@ int main(void)
 
 	while(1)
 	{
-		uart_send_byte(0xAA);
+		//uart_send_byte(0xAA);
+		//volatile uint8_t result = uart_receive_byte();
+		_GPIOB_BSRR |= 1; 
+
+		uart_send_byte(0xFF);
+		uart_send_byte(0xFF);
+		uart_send_byte(0x3D);	/* 61 in decimal should be the identity */
+		uart_send_byte(0x02);	/* Length for a ping packet is 2 */
+		uart_send_byte(0x01);	/* Ping has the instruction 0x01 */
+		uart_send_byte(0xBF);	/* The checksum should be added on this line */
+		
+		_GPIOB_BSRR |= (1 << 16);
+		
+		volatile uint8_t result1 = uart_receive_byte();
+		volatile uint8_t result2 = uart_receive_byte();
+		volatile uint8_t result3 = uart_receive_byte();
+		volatile uint8_t result4 = uart_receive_byte();	
+		volatile uint8_t result5 = uart_receive_byte();
+		volatile uint8_t result6 = uart_receive_byte();
 	}
 	
 	return 0;					/* We should never reach this point */
