@@ -2,12 +2,14 @@
 \usepackage{tikz} 
 \begin{document}
 \noindent
-kinematics.tex is generated from kinematics.sk of sketch-lib, with program sketch.
+\tolerance=300
+kinematics.tex is generated from a custom kinematics.sk of sketch-lib, with program sketch.
 The command for this is:
-\noindent
-sketch kinematics.sk -o kinematics.tex
-
+\vskip1em
+{\tt sketch custom.sk -o ../kinematics.tex}
+\vfill
 \begin{center}
 \input{kinematics.tex}
 \end{center}
+\vfill
 \end{document}
