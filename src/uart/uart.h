@@ -14,7 +14,14 @@
 
 void uart_init();
 
+/*
+ * Send a byte through the Tx pin.
+ */
 uint8_t uart_send_byte(uint8_t byte);
 
+/*
+ * Receive a byte through the Rx pin.
+ */
+uint8_t uart_receive_byte();
 
 #endif	/* _UART_H */

@@ -25,3 +25,10 @@ uint8_t uart_send_byte(uint8_t byte)
 
 	return 0;
 }
+
+uint8_t uart_receive_byte()
+{
+	while(!(_USART_SR & 0x20));	/* Wait untill there is something to read */
+
+	return (_USART_DR & 0xFF);	/* Return the received byte */
+}
