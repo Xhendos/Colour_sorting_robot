@@ -8,8 +8,8 @@ typedef struct {
 	uint16_t r1;
 	uint16_t r2;
 	uint8_t state;
-	char from[3];
-	char to[3];
+	char *from;
+	char *to;
 } instruction_t;
 
 int main() {
