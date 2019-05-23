@@ -52,6 +52,12 @@ int main() {
 					continue;
 				}
 				//Based on state, tell uart process what kind of instruction packet to send.
+				//For each stage give enough information so the uart process can construct the instruction packet.
+				switch (ins->state) {
+					case 0: //Rotate
+					    break;
+
+				}
 				//Go blocked and wait for uart to give back result. (wait until status packet has been received so the uart line is not busy anymore and a new instruction packet can be send.)
 				//If last state has been reached, set its flag.
 				printf("Arm %d rotated to %d and %d.\n", ins->arm, ins->r1, ins->r2);
