@@ -79,8 +79,8 @@ int main(void)
 
 		uint8_t dummy = _USART_DR;
 
-		uart_send_byte(0xFF);
-		uart_send_byte(0xFF);
+		uart_send_byte(0xFF);	/* header 1 */
+		uart_send_byte(0xFF);	/* header 2 */
 		uart_send_byte(0x3D);	/* id */
 		uart_send_byte(0x04);	/* length */
 		uart_send_byte(0x03);	/* instruction */
