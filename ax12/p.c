@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 typedef struct {
 	uint8_t flag;
@@ -11,6 +12,16 @@ typedef struct {
 	char *from;
 	char *to;
 } instruction_t;
+
+static uint16_t goalPositions[48];
+static uint16_t currentPositions[48];
+
+void rotate(uint8_t arm, uint16_t aDegrees);
+void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegrees);
+void wrist(uint8_t arm, uint16_t degrees);
+void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees);
+void setSpeed(uint8_t motor, uint16_t rpm);
+void setGoalPosition(uint8_t motor, uint16_t degrees);
 
 int main() {
 	instruction_t ins1 = {0, 1, 240, 60, 0, "t1", "t2"};
@@ -124,3 +135,56 @@ int main() {
 	return 0;
 }
 
+void rotate(uint8_t arm, uint16_t aDegrees) {
+	uint8_t aMotor = arm * 10 + 1;
+	setSpeed(aMotor, 15);
+	setGoalPosition(aMotor, aDegrees);
+}
+
+void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegrees) {
+	uint8_t index = (arm - 1) * 6;
+	uint8_t bMotor = arm * 10 + 2;
+	uint8_t cMotor = bMotor + 1;
+	uint8_t dMotor = cMotor + 1;
+	uint16_t bDegreesDelta = abs(currentPositions[index + 1] - bDegrees);
+	uint16_t cDegreesDelta = abs(currentPositions[index + 2] - cDegrees);
+	uint16_t dDegreesDelta = abs(currentPositions[index + 3] - dDegrees);
+	uint16_t bRpm = (bDegreesDelta / 90.0) * 15;
+	uint16_t cRpm = (cDegreesDelta / 90.0) * 15;
+	uint16_t dRpm = (dDegreesDelta / 90.0) * 15;
+	setSpeed(bMotor, bRpm);
+	setSpeed(cMotor, cRpm);
+	setSpeed(dMotor, dRpm);
+	setGoalPosition(bMotor, bDegrees);
+	setGoalPosition(cMotor, cDegrees);
+	setGoalPosition(dMotor, dDegrees);
+}
+
+void wrist(uint8_t arm, uint16_t degrees) {
+	uint8_t aMotor = arm * 10 + 4;
+	setSpeed(aMotor, 15);
+	setGoalPosition(aMotor, degrees);
+}
+
+void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees) {
+	uint8_t eMotor = arm * 10 + 5;
+	uint8_t fMotor = arm * 10 + 6;
+	setSpeed(eMotor, 15);
+	setSpeed(fMotor, 15);
+	setGoalPosition(eMotor, eDegrees);
+	setGoalPosition(fMotor, fDegrees);
+}
+
+//0--1023, 0.111 rpm per unit
+void setSpeed(uint8_t motor, uint16_t rpm) {
+	uint16_t units = rpm / 0.111;
+	units = units > 1023 ? 1023 : units;
+	//TODO: send instruction packet.
+}
+
+//0--1023, 0.29 degree per unit
+void setGoalPosition(uint8_t motor, uint16_t degrees) {
+	uint16_t units = degrees / 0.29;
+	units = units > 1023 ? 1023 : units;
+	//TODO: send instruction packet.
+}
