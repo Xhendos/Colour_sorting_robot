@@ -75,16 +75,16 @@ int main(void)
 
 	while(1)
 	{
-		//uart_send_byte(0xAA);
-		//volatile uint8_t result = uart_receive_byte();
 		_GPIOB_BSRR |= 1; 
 
 		uart_send_byte(0xFF);
 		uart_send_byte(0xFF);
-		uart_send_byte(0x3D);	/* 61 in decimal should be the identity */
-		uart_send_byte(0x02);	/* Length for a ping packet is 2 */
-		uart_send_byte(0x01);	/* Ping has the instruction 0x01 */
-		uart_send_byte(0xBF);	/* The checksum should be added on this line */
+		uart_send_byte(0x3D);	/* id */
+		uart_send_byte(0x04);	/* length */
+		uart_send_byte(0x03);	/* instruction */
+		uart_send_byte(0x05);	/* param 1 */
+		uart_send_byte(0x32);	/* param 2 */
+		uart_send_byte(0xBF);	/* checksum */
 		
 		_GPIOB_BSRR |= (1 << 16);
 		
