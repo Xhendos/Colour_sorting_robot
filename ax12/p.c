@@ -15,18 +15,16 @@ typedef struct {
 int main() {
 	instruction_t ins1 = {0, 1, 240, 60, 0, "t1", "t2"};
 	instruction_t ins2 = {0, 2, 240, 150, 0, "t2", "f2"};
-	
 	instruction_t *inss[] = {&ins1, &ins2};
 	uint8_t inss_length = sizeof(inss) / sizeof(instruction_t *);
-
 	uint8_t beun_variable = 0;
 
-	//Breaks the loop when all arms have done their movements.
+	//The loop breaks when all arms have done their movements.
 	while (1) {
-		//Initially set to 0 and has a chance to be incremented when the flag of an instruction is set.
-		//Later the loop will break if this is equal to the amount of instructions, all instructions have been dealt with.
+		//Increments when the flag of an instruction is set.
+		//Later the loop will break if this is equal to the amount of instructions.
 		uint8_t flags = 0;
-		//Loop through all instructions.
+		//Go through all instructions.
 		for (int i = 0; i < inss_length; ++i) {
 			instruction_t *ins = inss[i];
 			//Has instruction been dealt with?
@@ -54,9 +52,53 @@ int main() {
 				//Based on state, tell uart process what kind of instruction packet to send.
 				//For each stage give enough information so the uart process can construct the instruction packet.
 				switch (ins->state) {
-					case 0: //Rotate
+					case 0: //rotate
+						//B, C, D, E, F: -
+						//A: r1
 					    break;
-
+					case 1: //extend
+						//A, E, F: -
+						//B, C, D: 105, 105, 105
+					    break;
+					case 2: //close
+						//A, B, C, D: -
+						//E, F: 130, 170
+					    break;
+					case 3: //lift
+						//A, B, C, E, F: -
+						//D: 60
+					    break;
+					case 4: //retract
+						//A,E,F:-
+						//b,c,d:195,60,60
+					    break;
+					case 5: //rotate
+						//b,c,d,e,f:-
+						//a:r2
+					    break;
+					case 6: //extend
+						//a,e,f:-
+						//b,c,d:105,105,60
+					    break;
+					case 7: //put
+						//a,b,c,e,f:-
+						//d:105
+					    break;
+					case 8: //open
+						//a,b,c,d:-
+						//e,f:150
+					    break;
+					case 9: //retract
+						//a,e,f:-
+						//b,c,d:195,60,60
+					    break;
+					case 10: //rotate
+						//b,c,d,e,f:-
+						//a:150
+					    break;
+					default: //Something went wrong.
+						//Notify user.
+					    break;
 				}
 				//Go blocked and wait for uart to give back result. (wait until status packet has been received so the uart line is not busy anymore and a new instruction packet can be send.)
 				//If last state has been reached, set its flag.
@@ -81,3 +123,4 @@ int main() {
 
 	return 0;
 }
+
