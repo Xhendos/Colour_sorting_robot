@@ -77,6 +77,8 @@ int main(void)
 	{
 		_GPIOB_BSRR |= 1; 
 
+		uint8_t dummy = _USART_DR;
+
 		uart_send_byte(0xFF);
 		uart_send_byte(0xFF);
 		uart_send_byte(0x3D);	/* id */
@@ -84,7 +86,7 @@ int main(void)
 		uart_send_byte(0x03);	/* instruction */
 		uart_send_byte(0x05);	/* param 1 */
 		uart_send_byte(0x32);	/* param 2 */
-		uart_send_byte(0xBF);	/* checksum */
+		uart_send_byte(0x84);	/* checksum */
 		
 		_GPIOB_BSRR |= (1 << 16);
 		
