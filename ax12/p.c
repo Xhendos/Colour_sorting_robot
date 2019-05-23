@@ -66,46 +66,57 @@ int main() {
 					case 0: //rotate
 						//B, C, D, E, F: -
 						//A: r1
+						rotate(ins->arm, ins->r1);
 					    break;
 					case 1: //extend
 						//A, E, F: -
 						//B, C, D: 105, 105, 105
+						stretch(ins->arm, 105, 105, 105);
 					    break;
 					case 2: //close
 						//A, B, C, D: -
 						//E, F: 130, 170
+						claw(ins->arm, 130, 170);
 					    break;
 					case 3: //lift
 						//A, B, C, E, F: -
 						//D: 60
+						wrist(ins->arm, 60);
 					    break;
 					case 4: //retract
 						//A,E,F:-
 						//b,c,d:195,60,60
+						stretch(ins->arm, 195, 60, 60);
 					    break;
 					case 5: //rotate
 						//b,c,d,e,f:-
 						//a:r2
+						rotate(ins->arm, ins->r2);
 					    break;
 					case 6: //extend
 						//a,e,f:-
 						//b,c,d:105,105,60
+						stretch(ins->arm, 105, 105, 60);
 					    break;
 					case 7: //put
 						//a,b,c,e,f:-
 						//d:105
+						wrist(ins->arm, 105);
 					    break;
 					case 8: //open
 						//a,b,c,d:-
 						//e,f:150
+						claw(ins->arm, 150, 150);
 					    break;
 					case 9: //retract
 						//a,e,f:-
 						//b,c,d:195,60,60
+						stretch(ins->arm, 195, 60, 60);
 					    break;
 					case 10: //rotate
 						//b,c,d,e,f:-
 						//a:150
+						rotate(ins->arm, 150);
 					    break;
 					default: //Something went wrong.
 						//Notify user.
