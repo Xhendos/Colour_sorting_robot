@@ -29,7 +29,6 @@ int main() {
 	instruction_t ins3 = {0, 8, 240, 60, 0, "t8", "t1"};
 	instruction_t *inss[] = {&ins1, &ins2, &ins3};
 	uint8_t inss_length = sizeof(inss) / sizeof(instruction_t *);
-	uint8_t beun_variable = 0;
 
 	//The loop breaks when all arms have done their movements.
 	while (1) {
