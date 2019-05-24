@@ -13,8 +13,16 @@ typedef struct {
 	char *to;
 } instruction_t;
 
-static uint16_t goalPositions[48];
+typedef struct {
+	uint16_t goalPosition;
+} motor_t;
+
+typedef struct {
+	motor_t motors[6];
+} arm_t;
+
 static uint16_t currentPositions[48];
+static arm_t arms[8];
 
 void rotate(uint8_t arm, uint16_t aDegrees);
 void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegrees);

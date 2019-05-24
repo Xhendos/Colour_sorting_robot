@@ -45,6 +45,11 @@ By receiving this message, the Arm Controller will unscratch the step and the st
 What if the steps are globally accessible?
 The Uart Controller can unscratch the step and the Arm Controller checks this scratch variable like usual and proceeds accordingly.
 The Arm Controller could instruct the Uart Controller to send the next Instruction packet to proceed the step.
-\section{Arm Controller}
-
+\section{Uart Controller}
+Uart Controller can spam send Instruction packets but this will result in incorrect movements of a robotic arm.
+The Uart Controller must know when it is safe/allowed to send next Instruction packet.
+There could be a flag added to the struct that indicates if an arm has not yet reached it goal position.
+The goal position can also be added as a member to the struct.
+Note: this is not the value of the Goal Position of a servomotor.
+A goal position member does not work since multiple servomotors must reach their goal position.
 \end{document}
