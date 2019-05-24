@@ -26,7 +26,8 @@ void setGoalPosition(uint8_t motor, uint16_t degrees);
 int main() {
 	instruction_t ins1 = {0, 1, 240, 60, 0, "t1", "t2"};
 	instruction_t ins2 = {0, 2, 240, 150, 0, "t2", "f2"};
-	instruction_t *inss[] = {&ins1, &ins2};
+	instruction_t ins3 = {0, 8, 240, 60, 0, "t8", "t1"};
+	instruction_t *inss[] = {&ins1, &ins2, &ins3};
 	uint8_t inss_length = sizeof(inss) / sizeof(instruction_t *);
 	uint8_t beun_variable = 0;
 
@@ -50,16 +51,22 @@ int main() {
 					if (prev_ins->flag) {
 						continue;
 					} else {
-						if (strcmp(prev_ins->to, ins->from) == 0 || strcmp(prev_ins->from, ins->from)) {
+						if (strcmp(ins->from, prev_ins->from) == 0
+							|| strcmp(ins->from, prev_ins->to) == 0
+							|| strcmp(ins->to, prev_ins->from) == 0
+							|| strcmp(ins->to, prev_ins->to) == 0) {
 							allowed = 0;
 							break;
 						}
 					}
 				}
-				printf("[%d] is%s allowed.\n", i, allowed ? "" : " not");
+
+				printf("Arm %d in state %d is%s allowed.\n", ins->arm, ins->state, allowed ? "" : " not");
+
 				if (!allowed) {
 					continue;
 				}
+
 				//Based on state, tell uart process what kind of instruction packet to send.
 				//For each stage give enough information so the uart process can construct the instruction packet.
 				switch (ins->state) {
@@ -117,22 +124,14 @@ int main() {
 						//b,c,d,e,f:-
 						//a:150
 						rotate(ins->arm, 150);
+						ins->flag = 1;
 					    break;
 					default: //Something went wrong.
 						//Notify user.
-					    break;
+						continue;
 				}
-				//Go blocked and wait for uart to give back result. (wait until status packet has been received so the uart line is not busy anymore and a new instruction packet can be send.)
-				//If last state has been reached, set its flag.
-				printf("Arm %d rotated to %d and %d.\n", ins->arm, ins->r1, ins->r2);
-				printf("Ball moved from %s to %s.\n", ins->from, ins->to);
 
-				//DEBUG
-				if (beun_variable >= 1) {
-					ins->flag = 1;
-				} else {
-					++beun_variable;
-				}
+				++ins->state;
 			}
 		}
 
@@ -140,8 +139,6 @@ int main() {
 			break;
 		}
 	}
-
-	printf("Sorting is done. Jolly good!\n");
 
 	return 0;
 }
