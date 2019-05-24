@@ -1,0 +1,50 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper]{geometry}
+
+\begin{document}
+\section{Overall}
+Main starts all processes.
+Processes that are available: Ping, Current Position, Colour, Uart Controller, I2c Controller and Arm Controller.
+Uart Controller and I2c Controller control the uart and i2c hardware.
+They are responsible for filling the data registers and initiate the transfers.
+
+All servomotors are connected to the same uart bus.
+These will be instructed what to do based on Instruction packets.
+They respond based on the type of Instruction packet.
+For this application only Instruction packets of type Ping will be met with a Status packet.
+Both Instruction and Status packets consist of more than one byte.
+Each byte send or received will generate an interrupt.
+
+The Arm Controller might instruct the Uart Controller to send an Instruction packet to one of the servomotors or it might instruct the Uart Controller to prepare three servomotors and activate them by sending a broadcast Instruction packet of type Action.
+One must be careful not to activate other prepared servomotors.
+Activating each servomotor individually would give the same result as instructing each servomotor individually.
+
+Lets go through the steps of preparing three servomotors and active them at the same time.
+First by describing the current implementation.
+The Arm Controller has received a list of steps to sort the coloured balls.
+The steps will be iterated and at each step a decision is made.
+Continue to the next step if this step is completed.
+Look at all previous steps to establish that the placeholders in this step will not be accessed in previous non completed steps.
+If this is true then this step is allowed to be processed.
+A robotic arm will be in one if eleven states based on the processing of the step.
+Completing the step will put the robotic arm in its resting state and the step is deemed complete.
+
+The current code for the Arm Controller has a switch with eleven cases but what if this were to be placed in the Uart Controller?
+The Arm Controller decides which step or steps may be processed and tells this to the Uart Controller.
+The choose has been made to not receive Status packets after sending Instruction packets, excluding Instruction packets of type Ping.
+A couple of state changes of a robotic arm require three servomotors to be prepared and activated at the same time.
+First the speed is set of each servomotor.
+The Uart Controller gets instructed by the Arm Controller.
+The Arm Controller takes scratches the step and continue its normal operation.
+The Uart Controller will eventually leave a message for the Arm Controller saying that the Instruction has been send.
+By receiving this message, the Arm Controller will unscratch the step and the step may proceed to its next state.
+
+What if the steps are globally accessible?
+The Uart Controller can unscratch the step and the Arm Controller checks this scratch variable like usual and proceeds accordingly.
+The Arm Controller could instruct the Uart Controller to send the next Instruction packet to proceed the step.
+\section{Arm Controller}
+
+\end{document}
