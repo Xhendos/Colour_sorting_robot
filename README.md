@@ -42,6 +42,13 @@ vector_tables
 
 src
 |_ main.c
+|_ uart
+    |_ uart.h
+    |_ uart.c
+|_ i2c
+    |_ i2c.h
+    |_ i2c.c
+
 
 sim
 |_ index.html
