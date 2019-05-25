@@ -64,7 +64,7 @@ int main() {
 			instruction_t *ins = inss[i];
 			//Has instruction been dealt with?
 			if (ins->flag) {
-			    	++flags;
+				++flags;
 				continue;
 			} else {
 				uint8_t allowed = 1;
@@ -84,19 +84,22 @@ int main() {
 					}
 				}
 
-				//Have all servo motors in the arm reached their goal position?
-				if (ins->state != 0) {
-					for (int j = 0; j < 6; ++j) {
-						uint8_t index = (ins->arm - 1) * 6 + j;
-						if (abs(currentPositions[index] - goalPositions[index]) > 5) {
-							//allowed = 0;
-						}
-					}
-				}
-
 				printf("Arm %d in state %d is%s allowed.\n", ins->arm, ins->state, allowed ? "" : " not");
 
 				if (!allowed) {
+					continue;
+				}
+
+				uint8_t stateChangeComplete = 1;
+				//Have all servo motors in the arm reached their goal position?
+				for (int j = 0; j < 6; ++j) {
+					uint8_t index = (ins->arm - 1) * 6 + j;
+					if (abs(currentPositions[index] - goalPositions[index]) > 5) {
+						//stateChangeComplete = 0;
+					}
+				}
+
+				if (!stateChangeComplete) {
 					continue;
 				}
 
@@ -157,8 +160,10 @@ int main() {
 						//b,c,d,e,f:-
 						//a:150
 						rotate(ins->arm, 150);
-						ins->flag = 1;
 					    break;
+					case 11:
+						ins->flag = 1;
+						continue;
 					default: //Something went wrong.
 						//Notify user.
 						continue;
