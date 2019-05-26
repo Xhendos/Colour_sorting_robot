@@ -1,13 +1,18 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include "octo.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
 
-uint16_t currentPositions[48];
-uint16_t goalPositions[48];
+position_t presentPositions[48];
+position_t goalPositions[48];
+uint8_t pings[48];
+
 QueueHandle_t xQueue;
+QueueHandle_t uartSignalQueue;
+QueueHandle_t uartResultQueue;
+QueueHandle_t packetQueue;
 
 void led_task()
 {
@@ -15,9 +20,9 @@ void led_task()
 	{
 		uint8_t speed;
 		xQueueReceive(xQueue, &speed, portMAX_DELAY);
-		GPIOC_SR = (1 << 13);
-		vTaskDelay(pdMS_TO_TICKS(250 * speed));
 		GPIOC_SR = (1 << 29);
+		vTaskDelay(pdMS_TO_TICKS(250 * speed));
+		GPIOC_SR = (1 << 13);
 		vTaskDelay(pdMS_TO_TICKS(250 * speed));
 	}
 }
@@ -51,26 +56,26 @@ void arm_controller_task()
 	//These are the wrong numbers.
 	//They should be in units instead of degrees.
 	//150 / 0.29 = 517.
-	goalPositions[0] = 150;
-	goalPositions[1] = 195;
-	goalPositions[2] = 60;
-	goalPositions[3] = 60;
-	goalPositions[4] = 150;
-	goalPositions[5] = 150;
+	goalPositions[0].x = 150;
+	goalPositions[1].x = 195;
+	goalPositions[2].x = 60;
+	goalPositions[3].x = 60;
+	goalPositions[4].x = 150;
+	goalPositions[5].x = 150;
 
-	goalPositions[6] = 150;
-	goalPositions[7] = 195;
-	goalPositions[8] = 60;
-	goalPositions[9] = 60;
-	goalPositions[10] = 150;
-	goalPositions[11] = 150;
+	goalPositions[6].x = 150;
+	goalPositions[7].x = 195;
+	goalPositions[8].x = 60;
+	goalPositions[9].x = 60;
+	goalPositions[10].x = 150;
+	goalPositions[11].x = 150;
 
-	goalPositions[42] = 150;
-	goalPositions[43] = 195;
-	goalPositions[44] = 60;
-	goalPositions[45] = 60;
-	goalPositions[46] = 150;
-	goalPositions[47] = 150;
+	goalPositions[42].x = 150;
+	goalPositions[43].x = 195;
+	goalPositions[44].x = 60;
+	goalPositions[45].x = 60;
+	goalPositions[46].x = 150;
+	goalPositions[47].x = 150;
 
 	instruction_t ins1 = {0, 1, 240, 60, 0, "t1", "t2"};
 	instruction_t ins2 = {0, 2, 240, 150, 0, "t2", "f2"};
@@ -121,7 +126,7 @@ void arm_controller_task()
 				for (int j = 0; j < 6; ++j)
 				{
 					uint8_t index = (ins->arm - 1) * 6 + j;
-					if (abs(currentPositions[index] - goalPositions[index]) > 5)
+					if (abs(presentPositions[index].x - goalPositions[index].x) > 5)
 					{
 						//stateChangeComplete = 0;
 					}
@@ -187,8 +192,100 @@ void arm_controller_task()
 
 void uart_controller_task()
 {
-	uint8_t test;
-	xQueueReceive(xQueue, &test, portMAX_DELAY);
+	ax_packet_t packet;
+	uint8_t header = 0xFF;
+	uint8_t length;
+	uint8_t type;
+	uint8_t crc;
+	uint8_t dummy;
+	uint8_t bytes;
+	uint8_t byte;
+
+	while (1)
+	{
+		xQueueReceive(packetQueue, &packet, portMAX_DELAY);
+
+		length = packet.params_length + 2;
+		type = (uint8_t)packet.type;
+		crc = ax_crc(packet);
+		bytes = 6 + packet.params_length;
+		byte = 0;
+
+		for (int i = 0; i < bytes; ++i)
+		{
+			if (i <= 1)
+			{
+				byte = header;
+			}
+			else if (i == 2)
+			{
+				byte = packet.id;
+			}
+			else if (i == 3)
+			{
+				byte = length;
+			}
+			else if (i == 4)
+			{
+				byte = type;
+			}
+			else if (i >= 5 && i <= bytes - 2)
+			{
+				byte = packet.params[i - 5];
+			}
+			else if (i == bytes - 1)
+			{
+				byte = crc;
+			}
+		}
+
+		_USART_DR = byte;
+
+		//Get signal from isr when byte has been transmitted.
+		xQueueReceive(uartSignalQueue, &dummy, portMAX_DELAY);
+	}
+
+	uint8_t result;
+	uint8_t index = idToIndex(packet.id);
+
+	switch (packet.type)
+	{
+		case PING:
+			xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
+			pings[index] = result;
+			break;
+		case READ:
+			//Care for endianness.
+			for (int i = 0; i < packet.params[1]; ++i)
+			{
+				xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
+				presentPositions[index].xa[i] = result;
+			}
+			break;
+		default:
+			//Invalid type.
+			break;
+	}
+}
+
+uint8_t ax_crc(ax_packet_t packet) {
+	uint8_t crc = packet.id + (packet.params_length + 2) + (uint8_t)packet.type;
+	for (int i = 0; i < packet.params_length; ++i) {
+		crc += packet.params[i];
+	}
+	return ~crc;
+}
+
+uint8_t idToIndex(uint8_t id) {
+	uint8_t motor = id % 10;
+	uint8_t arm = (id - motor) / 10;
+	return (arm - 1) * 6 + (motor - 1);
+}
+
+uint8_t indexToId(uint8_t index) {
+	uint8_t motor = (index % 6) + 1;
+	uint8_t arm = (index / 6) + 1;
+	return (arm * 10 + motor);
 }
 
 void rotate(uint8_t arm, uint16_t aDegrees) {
@@ -196,7 +293,7 @@ void rotate(uint8_t arm, uint16_t aDegrees) {
 	uint8_t aMotor = arm * 10 + 1;
 	setSpeed(aMotor, 15);
 	setGoalPosition(aMotor, aDegrees);
-	goalPositions[index] = aDegrees / 0.29;
+	goalPositions[index].x = aDegrees / 0.29;
 }
 
 void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegrees) {
@@ -204,9 +301,9 @@ void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegree
 	uint8_t bMotor = arm * 10 + 2;
 	uint8_t cMotor = bMotor + 1;
 	uint8_t dMotor = cMotor + 1;
-	uint16_t bDegreesDelta = abs(currentPositions[index + 1] - bDegrees);
-	uint16_t cDegreesDelta = abs(currentPositions[index + 2] - cDegrees);
-	uint16_t dDegreesDelta = abs(currentPositions[index + 3] - dDegrees);
+	uint16_t bDegreesDelta = abs(presentPositions[index + 1].x - bDegrees);
+	uint16_t cDegreesDelta = abs(presentPositions[index + 2].x - cDegrees);
+	uint16_t dDegreesDelta = abs(presentPositions[index + 3].x - dDegrees);
 	uint16_t bRpm = (bDegreesDelta / 90.0) * 15;
 	uint16_t cRpm = (cDegreesDelta / 90.0) * 15;
 	uint16_t dRpm = (dDegreesDelta / 90.0) * 15;
@@ -216,9 +313,9 @@ void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegree
 	setGoalPosition(bMotor, bDegrees);
 	setGoalPosition(cMotor, cDegrees);
 	setGoalPosition(dMotor, dDegrees);
-	goalPositions[index+1] = bDegrees / 0.29;
-	goalPositions[index+2] = cDegrees / 0.29;
-	goalPositions[index+3] = dDegrees / 0.29;
+	goalPositions[index+1].x = bDegrees / 0.29;
+	goalPositions[index+2].x = cDegrees / 0.29;
+	goalPositions[index+3].x = dDegrees / 0.29;
 }
 
 void wrist(uint8_t arm, uint16_t dDegrees) {
@@ -226,7 +323,7 @@ void wrist(uint8_t arm, uint16_t dDegrees) {
 	uint8_t aMotor = arm * 10 + 4;
 	setSpeed(aMotor, 15);
 	setGoalPosition(aMotor, dDegrees);
-	goalPositions[index+3] = dDegrees / 0.29;
+	goalPositions[index+3].x = dDegrees / 0.29;
 }
 
 void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees) {
@@ -237,8 +334,8 @@ void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees) {
 	setSpeed(fMotor, 15);
 	setGoalPosition(eMotor, eDegrees);
 	setGoalPosition(fMotor, fDegrees);
-	goalPositions[index+4] = eDegrees / 0.29;
-	goalPositions[index+5] = fDegrees / 0.29;
+	goalPositions[index+4].x = eDegrees / 0.29;
+	goalPositions[index+5].x = fDegrees / 0.29;
 }
 
 

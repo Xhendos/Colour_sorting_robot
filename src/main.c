@@ -7,7 +7,6 @@
 #include "i2c.h"
 #include "uart.h"
 #include "octo.h"
-#include "ax12.h"
 
 int main(void)
 {
@@ -66,6 +65,9 @@ int main(void)
 	GPIOC_HIGH |= (0 << 22);
 
 	xQueue = xQueueCreate(16, sizeof(uint8_t));
+	packetQueue = xQueueCreate(16, sizeof(ax_packet_t));
+	uartSignalQueue = xQueueCreate(16, sizeof(uint8_t));
+	uartResultQueue = xQueueCreate(16, sizeof(uint8_t));
 
 	xTaskCreate(led_task, "LED_blink_1", 128, NULL, configMAX_PRIORITIES - 1, NULL);
 	//xTaskCreate(uart_controller_task, "uart", 128, NULL, configMAX_PRIORITIES - 1, NULL);
