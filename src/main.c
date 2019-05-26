@@ -5,6 +5,7 @@
 #include "task.h"
 
 #include "i2c/i2c.h"
+#include "i2c/rgb/rgb.h"
 
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
@@ -51,12 +52,7 @@ int main(void)
 	_RCC_APB1RSTR &= ~(1 << 21);	/* Stop resetting the I2C1 module */
 
 	i2c_init();					/* Initialise the I2C1 module */
+    rgbInit();
 
-	while(1)
-	{
-		i2c_begin_transmission(0x29, I2C_WRITE, 0xFF);
-		i2c_stop_transmission();	
-	}
-	
 	return 0;					/* We should never reach this point */
 }
