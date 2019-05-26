@@ -4,25 +4,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "i2c/i2c.h"
-#include "uart/uart.h"
-
-#define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
-#define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
-
-#define	_RCC_APB2ENR	(*((volatile unsigned long *) 0x40021018))		/* Peripheral clock enable register */
-#define _RCC_APB1ENR	(*((volatile unsigned long *) 0x4002101C))		/* Peripheral clock enable register */
-#define _RCC_APB1RSTR	(*((volatile unsigned long *) 0x40021010))		/* Peripheral reset register */
-#define _RCC_APB2RSTR	(*((volatile unsigned long *) 0x4002100C))		/* APB2 peripheral reset register */
-
-
-/* GPIOA */
-#define _GPIOA_CRH		(*((volatile unsigned long *) 0x40010804))		/* Port configuration register high */
-#define	_GPIOA_BSRR		(*((volatile unsigned long *) 0x40010810))		/* set/reset register */
-
-/* GPIOB */
-#define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
-#define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
+#include "i2c.h"
+#include "uart.h"
+#include "octo.h"
+#include "ax12.h"
 
 int main(void)
 {
@@ -73,30 +58,19 @@ int main(void)
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
-	while(1)
-	{
-		_GPIOB_BSRR |= 1; 
+	//led_task() settings.
+	GPIOC_CLK |= (1 << 4);
+	GPIOC_HIGH &= ~(3 << 20);
+	GPIOC_HIGH |= (1 << 20);
+	GPIOC_HIGH &= ~(3 << 22);
+	GPIOC_HIGH |= (0 << 22);
 
-		uint8_t dummy = _USART_DR;
+	xQueue = xQueueCreate(16, sizeof(uint8_t));
 
-		uart_send_byte(0xFF);	/* header 1 */
-		uart_send_byte(0xFF);	/* header 2 */
-		uart_send_byte(0x3D);	/* id */
-		uart_send_byte(0x04);	/* length */
-		uart_send_byte(0x03);	/* instruction */
-		uart_send_byte(0x05);	/* param 1 */
-		uart_send_byte(0x32);	/* param 2 */
-		uart_send_byte(0x84);	/* checksum */
-		
-		_GPIOB_BSRR |= (1 << 16);
-		
-		volatile uint8_t result1 = uart_receive_byte();
-		volatile uint8_t result2 = uart_receive_byte();
-		volatile uint8_t result3 = uart_receive_byte();
-		volatile uint8_t result4 = uart_receive_byte();	
-		volatile uint8_t result5 = uart_receive_byte();
-		volatile uint8_t result6 = uart_receive_byte();
-	}
-	
+	xTaskCreate(led_task, "LED_blink_1", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(uart_controller_task, "uart", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+	xTaskCreate(test_task, "test", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+	vTaskStartScheduler();
+
 	return 0;					/* We should never reach this point */
 }
