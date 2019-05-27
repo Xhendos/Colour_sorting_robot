@@ -77,16 +77,15 @@ int main(void)
 	{
 		_GPIOB_BSRR |= 1; 
 
-		uint8_t dummy = _USART_DR;
-
+		//Set Torque Enable.
 		uart_send_byte(0xFF);	/* header 1 */
 		uart_send_byte(0xFF);	/* header 2 */
 		uart_send_byte(0x3D);	/* id */
 		uart_send_byte(0x04);	/* length */
 		uart_send_byte(0x03);	/* instruction */
-		uart_send_byte(0x05);	/* param 1 */
-		uart_send_byte(0x32);	/* param 2 */
-		uart_send_byte(0x84);	/* checksum */
+		uart_send_byte(0x18);	/* param 1 */
+		uart_send_byte(0x01);	/* param 2 */
+		uart_send_byte(0xA2);	/* checksum */
 		
 		_GPIOB_BSRR |= (1 << 16);
 		
@@ -96,6 +95,29 @@ int main(void)
 		volatile uint8_t result4 = uart_receive_byte();	
 		volatile uint8_t result5 = uart_receive_byte();
 		volatile uint8_t result6 = uart_receive_byte();
+
+		_GPIOB_BSRR |= 1;
+
+		//Set Goal Position to 0x0303 little endian or 0x0303 big endian.
+		//0x0303 is 771 in decimal or 223,6 degrees.
+		uart_send_byte(0xFF);	/* header 1 */
+		uart_send_byte(0xFF);	/* header 2 */
+		uart_send_byte(0x3D);	/* id */
+		uart_send_byte(0x05);	/* length */
+		uart_send_byte(0x03);	/* instruction */
+		uart_send_byte(0x1E);	/* param 1 */
+		uart_send_byte(0x03);	/* param 2 */
+		uart_send_byte(0x03);	/* param 3 */
+		uart_send_byte(0x96);	/* checksum */
+
+		_GPIOB_BSRR |= (1 << 16);
+
+		result1 = uart_receive_byte();
+		result2 = uart_receive_byte();
+		result3 = uart_receive_byte();
+		result4 = uart_receive_byte();
+		result5 = uart_receive_byte();
+		result6 = uart_receive_byte();
 	}
 	
 	return 0;					/* We should never reach this point */
