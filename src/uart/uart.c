@@ -1,4 +1,5 @@
 #include "uart.h"
+#include "stm32f103xb.h"
 
 /* TODO: Fix the baud rate register. */
 void uart_init()
@@ -14,6 +15,11 @@ void uart_init()
 	 */
 	
 	_USART_BRR = 0x10;		/* TODO: validate the baud rate register. */
+
+	_USART_CR1 |= 0x60;		/* Generate an interrupt when we received a byte
+							 * or when we succesfully transmitted a byte */
+	NVIC_SetPriority(37, 0x02);
+	NVIC_EnableIRQ(37);
 }
 
 uint8_t uart_send_byte(uint8_t byte)
