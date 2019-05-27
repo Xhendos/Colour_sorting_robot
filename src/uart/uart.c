@@ -23,6 +23,12 @@ uint8_t uart_send_byte(uint8_t byte)
 	_USART_DR = byte;
 	while(!(_USART_SR & 0x40));	/* Wait untill the transmission is done */
 
+	uint32_t dummy = _USART_SR & 0x40;
+	//Software sequence to clear Transmission complete (TC).
+	dummy = _USART_SR;
+	_USART_DR = 0x55; //Garbage
+	dummy = _USART_SR;
+
 	return 0;
 }
 

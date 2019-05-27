@@ -4,6 +4,7 @@
 #include "octo.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "uart.h"
 
 position_t presentPositions[48];
 position_t goalPositions[48];
@@ -13,6 +14,15 @@ QueueHandle_t xQueue;
 QueueHandle_t uartSignalQueue;
 QueueHandle_t uartResultQueue;
 QueueHandle_t packetQueue;
+
+void uart_test_task()
+{
+	while (1)
+	{
+		uart_send_byte(0x0F);
+		uart_send_byte(0x0F);
+	}
+}
 
 void led_task()
 {
@@ -237,34 +247,50 @@ void uart_controller_task()
 			{
 				byte = crc;
 			}
+
+			_USART_DR = byte;
+
+			//Get signal from isr when byte has been transmitted.
+			xQueueReceive(uartSignalQueue, &dummy, portMAX_DELAY);
 		}
 
-		_USART_DR = byte;
+		uint8_t result;
+		uint8_t index = idToIndex(packet.id);
 
-		//Get signal from isr when byte has been transmitted.
-		xQueueReceive(uartSignalQueue, &dummy, portMAX_DELAY);
-	}
-
-	uint8_t result;
-	uint8_t index = idToIndex(packet.id);
-
-	switch (packet.type)
-	{
-		case PING:
-			xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
-			pings[index] = result;
-			break;
-		case READ:
-			//Care for endianness.
-			for (int i = 0; i < packet.params[1]; ++i)
-			{
-				xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
-				presentPositions[index].xa[i] = result;
-			}
-			break;
-		default:
-			//Invalid type.
-			break;
+		switch (packet.type)
+		{
+			case PING:
+				bytes = 6;
+				for (int i = 1; i <= bytes; ++i)
+				{
+					xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
+					if (i == 5)
+					{
+						pings[index] = result;
+					}
+				}
+				break;
+			//Only supports two byte reads.
+			//And places result in presentPositions only.
+			case READ:
+				bytes = 8;
+				for (int i = 1; i <= bytes; ++i)
+				{
+					xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
+					if (i == 6)
+					{
+						presentPositions[index].xa[0] = result;
+					}
+					else if (i == 7)
+					{
+						presentPositions[index].xa[1] = result;
+					}
+				}
+				break;
+			default:
+				//Invalid type.
+				break;
+		}
 	}
 }
 
@@ -286,6 +312,10 @@ uint8_t indexToId(uint8_t index) {
 	uint8_t motor = (index % 6) + 1;
 	uint8_t arm = (index / 6) + 1;
 	return (arm * 10 + motor);
+}
+
+void USART1_IRQ_handler(void) {
+	
 }
 
 void rotate(uint8_t arm, uint16_t aDegrees) {

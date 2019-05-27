@@ -5,15 +5,6 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 
-/* USART */
-#define	_USART_SR		(*((volatile unsigned long *) 0x40013800))	/* Status register */
-#define _USART_DR		(*((volatile unsigned long *) 0x40013804))	/* Data register */
-#define _USART_BRR		(*((volatile unsigned long *) 0x40013808))	/* Baud rate register */
-#define _USART_CR1		(*((volatile unsigned long *) 0x4001380C))	/* Control register 1 */
-#define _USART_CR2		(*((volatile unsigned long *) 0x40013810))	/* Control register 2 */
-#define _USART_CR3		(*((volatile unsigned long *) 0x40013814))	/* Control register 3 */
-#define _USART_GTPR		(*((volatile unsigned long *) 0x40013818))	/* Guard time and prescaler register */
-
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
 
@@ -90,6 +81,8 @@ extern uint8_t ax_crc(ax_packet_t packet);
 
 extern uint8_t idToIndex(uint8_t id);
 extern uint8_t indexToId(uint8_t index);
+
+extern void USART1_IRQ_handler(void);
 
 extern void rotate(uint8_t arm, uint16_t aDegrees);
 extern void stretch(uint8_t arm, uint16_t bDegrees, uint16_t cDegrees, uint16_t dDegrees);
