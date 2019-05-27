@@ -76,6 +76,7 @@ extern void led_task();
 extern void arm_controller_task();
 extern void uart_controller_task();
 extern void test_task();
+extern void uart_test_task();
 
 extern uint8_t ax_crc(ax_packet_t packet);
 

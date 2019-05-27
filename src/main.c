@@ -10,6 +10,18 @@
 
 int main(void)
 {
+	//xQueue = xQueueCreate(16, sizeof(uint8_t));
+	//packetQueue = xQueueCreate(16, sizeof(ax_packet_t));
+	//uartSignalQueue = xQueueCreate(16, sizeof(uint8_t));
+	//uartResultQueue = xQueueCreate(16, sizeof(uint8_t));
+
+	//xTaskCreate(led_task, "LED_blink_1", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(uart_controller_task, "uart", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+	//xTaskCreate(test_task, "test", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+	
+	/* Create all the tasks */
+	xTaskCreate(uart_test_task, "test", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
 	_RCC_CFGR &= ~(0x482);		/* Do NOT divide the HCLK (which is the ABP clock) and use the internal 8 MHz oscillator as clock source */
 
@@ -64,15 +76,13 @@ int main(void)
 	GPIOC_HIGH &= ~(3 << 22);
 	GPIOC_HIGH |= (0 << 22);
 
-	xQueue = xQueueCreate(16, sizeof(uint8_t));
-	packetQueue = xQueueCreate(16, sizeof(ax_packet_t));
-	uartSignalQueue = xQueueCreate(16, sizeof(uint8_t));
-	uartResultQueue = xQueueCreate(16, sizeof(uint8_t));
+	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete )bit */
 
-	xTaskCreate(led_task, "LED_blink_1", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	//xTaskCreate(uart_controller_task, "uart", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(test_task, "test", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	vTaskStartScheduler();
+	/* Set priorities and interrupts */
+	NVIC_SetPriority(37, 0x02);
+	NVIC_EnableIRQ(37);
+
+	vTaskStartScheduler(); 		/* Start the scheduler */
 
 	return 0;					/* We should never reach this point */
 }

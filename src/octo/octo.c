@@ -19,8 +19,7 @@ void uart_test_task()
 {
 	while (1)
 	{
-		uart_send_byte(0x0F);
-		uart_send_byte(0x0F);
+		//uart_send_byte(0x55);
 	}
 }
 
@@ -315,7 +314,7 @@ uint8_t indexToId(uint8_t index) {
 }
 
 void USART1_IRQ_handler(void) {
-	
+	_USART_SR &= ~(1 << 6);
 }
 
 void rotate(uint8_t arm, uint16_t aDegrees) {
