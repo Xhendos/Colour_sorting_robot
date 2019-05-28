@@ -8,6 +8,8 @@
 #include "uart.h"
 #include "octo.h"
 
+void clearPendingRegisters(void);
+
 int main(void)
 {
 	//xQueue = xQueueCreate(16, sizeof(uint8_t));
@@ -78,11 +80,26 @@ int main(void)
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
+	clearPendingRegisters();
+
 	/* Set priorities and interrupts */
 	NVIC_SetPriority(37, 0x02);
+	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
 
 	vTaskStartScheduler(); 		/* Start the scheduler */
 
 	return 0;					/* We should never reach this point */
+}
+
+void clearPendingRegisters(void)
+{
+	//0xE000E280- 0xE000E29C NVIC_ICPR0 - NVIC_ICPR7 0x00000000 Interrupt Clear-Pending Registers
+	volatile unsigned long int *begin = (unsigned long int *) 0xE000E280;
+	volatile unsigned long int *end = (unsigned long int *) 0xE000E29C;
+	for (; begin <= end; ++begin)
+	{
+		*begin = ~0;
+	}
+	return;
 }

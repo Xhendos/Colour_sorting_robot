@@ -314,7 +314,39 @@ uint8_t indexToId(uint8_t index) {
 }
 
 void USART1_IRQ_handler(void) {
-	_USART_SR &= ~(1 << 6);
+
+	volatile unsigned long dummy;
+	volatile uint8_t a;
+	volatile uint8_t b;
+
+	volatile unsigned long tc = _USART_SR & (1 << 6);
+	volatile unsigned long rxne = _USART_SR & (1 << 5);
+	volatile unsigned long ore = _USART_SR & (1 << 3);
+	//TC
+	if (tc)
+	{
+		a = 44;
+	}
+
+	//RXNE or ORE
+	if (rxne || ore)
+	{
+		b = 44;
+	}
+
+	//Clear TC by writing 0 to it.
+	dummy = _USART_SR &= ~(1 << 6);
+
+	//Clear RXNE by reading USART_SR.
+	dummy = _USART_SR;
+
+	//Clear ORE by reading USART_SR and USART_DR.
+	dummy = _USART_DR;
+
+	//Remove unused warnings.
+	++a;
+	++b;
+	++dummy;
 }
 
 void rotate(uint8_t arm, uint16_t aDegrees) {

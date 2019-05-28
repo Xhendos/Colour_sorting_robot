@@ -15,15 +15,14 @@ void uart_init()
 	
 	_USART_BRR = 0x10;		/* TODO: validate the baud rate register. */
 
-	_USART_CR1 |= 0x60;		/* Generate an interrupt when we received a byte
-							 * or when we succesfully transmitted a byte */
+	_USART_CR1 |= 0x60;		//0x40 TCIE, 0x20 RXNEIE. TCIE generates interrupt when TC=1. RXNEIE generates interrupt when ORE=1 or RXNE=1.
 }
 
 uint8_t uart_send_byte(uint8_t byte)
 {
-	while(!(_USART_SR & 0x80));	/* Wait untill the buffer is available */
+	//while(!(_USART_SR & 0x80));	/* Wait untill the buffer is available */
 	_USART_DR = byte;
-	while(!(_USART_SR & 0x40));	/* Wait untill the transmission is done */
+	//while(!(_USART_SR & 0x40));	/* Wait untill the transmission is done */
 
 	return 0;
 }
