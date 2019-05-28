@@ -19,7 +19,7 @@ void uart_test_task()
 {
 	while (1)
 	{
-		//uart_send_byte(0x55);
+		uart_send_byte(0x55);
 	}
 }
 

@@ -76,7 +76,7 @@ int main(void)
 	GPIOC_HIGH &= ~(3 << 22);
 	GPIOC_HIGH |= (0 << 22);
 
-	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete )bit */
+	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
 	/* Set priorities and interrupts */
 	NVIC_SetPriority(37, 0x02);
