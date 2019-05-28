@@ -6,6 +6,7 @@
 
 #include "i2c/i2c.h"
 #include "uart/uart.h"
+#include "i2c/rgb/rgb.h"
 
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
@@ -23,6 +24,7 @@
 /* GPIOB */
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
+
 
 int main(void)
 {
@@ -73,28 +75,15 @@ int main(void)
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
+	//rgbInit();
+
 	while(1)
 	{
-		//uart_send_byte(0xAA);
-		//volatile uint8_t result = uart_receive_byte();
-		_GPIOB_BSRR |= 1; 
-
-		uart_send_byte(0xFF);
-		uart_send_byte(0xFF);
-		uart_send_byte(0x3D);	/* 61 in decimal should be the identity */
-		uart_send_byte(0x02);	/* Length for a ping packet is 2 */
-		uart_send_byte(0x01);	/* Ping has the instruction 0x01 */
-		uart_send_byte(0xBF);	/* The checksum should be added on this line */
+		i2c_begin_transmission(0x29, 0x12 | TCS34725_COMMAND_BIT);
+		i2c_stop_transmission();		
 		
-		_GPIOB_BSRR |= (1 << 16);
-		
-		volatile uint8_t result1 = uart_receive_byte();
-		volatile uint8_t result2 = uart_receive_byte();
-		volatile uint8_t result3 = uart_receive_byte();
-		volatile uint8_t result4 = uart_receive_byte();	
-		volatile uint8_t result5 = uart_receive_byte();
-		volatile uint8_t result6 = uart_receive_byte();
+		volatile uint8_t ret = i2c_read_byte(0x29);
 	}
-	
+
 	return 0;					/* We should never reach this point */
 }

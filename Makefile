@@ -134,6 +134,8 @@ C_SRC    += ./freertos/Source/queue.c
 C_SRC    += ./src/main.c
 C_SRC	 += ./src/i2c/i2c.c
 C_SRC    += ./src/uart/uart.c
+C_SRC	 += ./src/i2c/rgb/rgb.c
+
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
