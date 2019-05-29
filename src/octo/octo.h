@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "task.h"
 
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
@@ -66,17 +67,22 @@ typedef union {
 extern position_t presentPositions[48];
 extern position_t goalPositions[48];
 extern uint8_t pings[48];
+extern volatile uint8_t isr_uart_flag;
+extern volatile uint8_t isr_i2c_flag;
 
-extern QueueHandle_t xQueue;
-extern QueueHandle_t packetQueue;
-extern QueueHandle_t uartSignalQueue;
-extern QueueHandle_t uartResultQueue;
+extern TaskHandle_t taskManagerQueue;
+extern TaskHandle_t uartSignalQueue;
+extern TaskHandle_t uartResultQueue;
 
-extern void led_task();
-extern void arm_controller_task();
-extern void uart_controller_task();
-extern void test_task();
-extern void uart_test_task();
+extern void manager_task();
+extern void init_task();
+extern void uart_task();
+extern void i2c_task();
+extern void user_task();
+extern void arm_task();
+extern void ping_task();
+extern void position_task();
+extern void rgb_task();
 
 extern uint8_t ax_crc(ax_packet_t packet);
 
