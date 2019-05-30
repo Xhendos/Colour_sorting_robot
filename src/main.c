@@ -1,5 +1,6 @@
 #include "stm32f103xb.h"
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -75,12 +76,73 @@ int main(void)
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
-	volatile uint16_t a;
+	volatile uint16_t modelNumber;
+	volatile uint16_t firmwareVersion;
+	volatile uint16_t id;
+	volatile uint16_t baudRate;
+	volatile uint16_t returnDelayTime;
+	volatile uint16_t cwAngleLimit;
+	volatile uint16_t ccwAngleLimit;
+	volatile uint16_t temperatureLimit;
+	volatile uint16_t minVoltageLimit;
+	volatile uint16_t maxVoltageLimit;
+	volatile uint16_t maxTorque;
+	volatile uint16_t statusReturnLevel;
+	volatile uint16_t alarmLed;
+	volatile uint16_t shutdown;
+	volatile uint16_t torqueEnable;
+	volatile uint16_t led;
+	volatile uint16_t cwComplianceMargin;
+	volatile uint16_t ccwComplianceMarge;
+	volatile uint16_t cwComplianceSlope;
+	volatile uint16_t ccwComplianceSlope;
+	volatile uint16_t goalPosition;
+	volatile uint16_t movingSpeed;
+	volatile uint16_t torqueLimit;
+	volatile uint16_t presentPosition;
+	volatile uint16_t presentSpeed;
+	volatile uint16_t presentLoad;
+	volatile uint16_t presenVoltage;
+	volatile uint16_t presentTemperature;
+	volatile uint16_t registered;
+	volatile uint16_t moving; 
+	volatile uint16_t lock;
+	volatile uint16_t punch;
 
 	while(1)
 	{
-		a = ax_read(61, GOAL_POSITION);
-		a = ax_read(61, PRESENT_POSITION);
+		modelNumber = ax_read(61, MODEL_NUMBER);
+		firmwareVersion = ax_read(61, FIRMWARE_VERSION);
+		id = ax_read(61, ID);
+		baudRate = ax_read(61, BAUD_RATE);
+		returnDelayTime = ax_read(61, RETURN_DELAY_TIME);
+		cwAngleLimit = ax_read(61, CW_ANGLE_LIMIT);
+		ccwAngleLimit = ax_read(61, CCW_ANGLE_LIMIT);
+		temperatureLimit = ax_read(61, TEMPERATURE_LIMIT);
+		minVoltageLimit = ax_read(61, MIN_VOLTAGE_LIMIT);
+		maxVoltageLimit = ax_read(61, MAX_VOLTAGE_LIMIT);
+		maxTorque = ax_read(61, MAX_TORQUE);
+		statusReturnLevel = ax_read(61, STATUS_RETURN_LEVEL);
+		alarmLed = ax_read(61, ALARM_LED);
+		shutdown = ax_read(61, SHUTDOWN);
+		torqueEnable = ax_read(61, TORQUE_ENABLE);
+		led = ax_read(61, LED);
+		cwComplianceMargin = ax_read(61, CW_COMPLIANCE_MARGIN);
+		ccwComplianceMarge = ax_read(61, CCW_COMPLIANCE_MARGIN);
+		cwComplianceSlope = ax_read(61, CW_COMPLIANCE_SLOPE);
+		ccwComplianceSlope = ax_read(61, CCW_COMPLIANCE_SLOPE);
+		goalPosition = ax_read(61, GOAL_POSITION);
+		movingSpeed = ax_read(61, MOVING_SPEED);
+		torqueLimit = ax_read(61, TORQUE_LIMIT);
+		presentPosition = ax_read(61, PRESENT_POSITION);
+		presentSpeed = ax_read(61, PRESENT_SPEED);
+		presentLoad = ax_read(61, PRESENT_LOAD);
+		presenVoltage = ax_read(61, PRESENT_VOLTAGE);
+		presentTemperature = ax_read(61, PRESENT_TEMPERATURE);
+		registered = ax_read(61, REGISTERED);
+		moving = ax_read(61, MOVING);
+		lock = ax_read(61, LOCK);
+		punch = ax_read(61, PUNCH);
 	}
 	
 	return 0;					/* We should never reach this point */
