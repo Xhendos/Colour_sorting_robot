@@ -7,6 +7,8 @@
 #include "i2c/i2c.h"
 #include "uart/uart.h"
 
+#include "ax12.h"
+
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
 
@@ -73,51 +75,12 @@ int main(void)
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
+	volatile uint16_t a;
+
 	while(1)
 	{
-		_GPIOB_BSRR |= 1; 
-
-		//Set Torque Enable.
-		uart_send_byte(0xFF);	/* header 1 */
-		uart_send_byte(0xFF);	/* header 2 */
-		uart_send_byte(0x3D);	/* id */
-		uart_send_byte(0x04);	/* length */
-		uart_send_byte(0x03);	/* instruction */
-		uart_send_byte(0x18);	/* param 1 */
-		uart_send_byte(0x01);	/* param 2 */
-		uart_send_byte(0xA2);	/* checksum */
-		
-		_GPIOB_BSRR |= (1 << 16);
-		
-		volatile uint8_t result1 = uart_receive_byte();
-		volatile uint8_t result2 = uart_receive_byte();
-		volatile uint8_t result3 = uart_receive_byte();
-		volatile uint8_t result4 = uart_receive_byte();	
-		volatile uint8_t result5 = uart_receive_byte();
-		volatile uint8_t result6 = uart_receive_byte();
-
-		_GPIOB_BSRR |= 1;
-
-		//Set Goal Position to 0x0303 little endian or 0x0303 big endian.
-		//0x0303 is 771 in decimal or 223,6 degrees.
-		uart_send_byte(0xFF);	/* header 1 */
-		uart_send_byte(0xFF);	/* header 2 */
-		uart_send_byte(0x3D);	/* id */
-		uart_send_byte(0x05);	/* length */
-		uart_send_byte(0x03);	/* instruction */
-		uart_send_byte(0x1E);	/* param 1 */
-		uart_send_byte(0x03);	/* param 2 */
-		uart_send_byte(0x03);	/* param 3 */
-		uart_send_byte(0x96);	/* checksum */
-
-		_GPIOB_BSRR |= (1 << 16);
-
-		result1 = uart_receive_byte();
-		result2 = uart_receive_byte();
-		result3 = uart_receive_byte();
-		result4 = uart_receive_byte();
-		result5 = uart_receive_byte();
-		result6 = uart_receive_byte();
+		a = ax_read(61, GOAL_POSITION);
+		a = ax_read(61, PRESENT_POSITION);
 	}
 	
 	return 0;					/* We should never reach this point */
