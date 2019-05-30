@@ -94,7 +94,7 @@ uint16_t ax_read(uint8_t id, ax_register_t r)
 	}
 	else
 	{
-		return (buffer[5] << 8) | buffer[6];
+		return (uint16_t)(buffer[5] | buffer[6] << 8);
 	}
 }
 
@@ -149,8 +149,8 @@ uint8_t ax_write(uint8_t id, ax_register_t r, uint16_t d)
 		case PRESENT_SPEED:
 		case PRESENT_LOAD:
 		case PUNCH:
-			params[1] = (uint8_t)(d >> 8);
-			params[2] = (uint8_t)d;
+			params[1] = (uint8_t)d;
+			params[2] = (uint8_t)(d >> 8);
 			params_length = 3;
 			break;
 	}

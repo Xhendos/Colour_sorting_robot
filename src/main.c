@@ -102,12 +102,19 @@ int main(void)
 	volatile uint16_t presentPosition;
 	volatile uint16_t presentSpeed;
 	volatile uint16_t presentLoad;
-	volatile uint16_t presenVoltage;
+	volatile uint16_t presentVoltage;
 	volatile uint16_t presentTemperature;
 	volatile uint16_t registered;
 	volatile uint16_t moving; 
 	volatile uint16_t lock;
 	volatile uint16_t punch;
+
+	uint8_t n = 1;
+
+	ax_write(61, TORQUE_ENABLE, 0);
+	ax_write(61, MOVING_SPEED, 50);
+	ax_write(61, GOAL_POSITION, 1023);
+	ax_write(61, TORQUE_ENABLE, 1);
 
 	while(1)
 	{
@@ -137,12 +144,26 @@ int main(void)
 		presentPosition = ax_read(61, PRESENT_POSITION);
 		presentSpeed = ax_read(61, PRESENT_SPEED);
 		presentLoad = ax_read(61, PRESENT_LOAD);
-		presenVoltage = ax_read(61, PRESENT_VOLTAGE);
+		presentVoltage = ax_read(61, PRESENT_VOLTAGE);
 		presentTemperature = ax_read(61, PRESENT_TEMPERATURE);
 		registered = ax_read(61, REGISTERED);
 		moving = ax_read(61, MOVING);
 		lock = ax_read(61, LOCK);
 		punch = ax_read(61, PUNCH);
+
+		if (!moving && abs(presentPosition - goalPosition) <= 2)
+		{
+			if (n)
+			{
+				ax_write(61, GOAL_POSITION, 0);
+				n = 0;
+			}
+			else
+			{
+				ax_write(61, GOAL_POSITION, 1023);
+				n = 1;
+			}
+		}
 	}
 	
 	return 0;					/* We should never reach this point */
