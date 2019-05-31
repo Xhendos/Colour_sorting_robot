@@ -89,7 +89,7 @@ void init_task()
 	//Start user, arm, ping, position, rgb tasks.
 	//xTaskCreate(user_task, "user", 128, NULL, 10, NULL);
 	//xTaskCreate(arm_task, "arm", 128, NULL, 9, NULL);
-	//xTaskCreate(ping_task, "ping", 128, NULL, 8, NULL);
+	xTaskCreate(ping_task, "ping", 128, NULL, 8, NULL);
 	//xTaskCreate(position_task, "position", 128, NULL, 7, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
 
@@ -117,11 +117,7 @@ void uart_task()
 
 	while (1)
 	{
-		//xQueueReceive(uartPacketQueue, &packet, portMAX_DELAY);
-
-		packet.id = 61;
-		packet.type = PING;
-		packet.params_length = 0;
+		xQueueReceive(uartPacketQueue, &packet, portMAX_DELAY);
 
 		length = packet.params_length + 2;
 		type = (uint8_t)packet.type;
