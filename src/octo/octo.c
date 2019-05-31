@@ -11,36 +11,29 @@
 position_t presentPositions[48];
 position_t goalPositions[48];
 uint8_t pings[48];
-volatile uint8_t isr_uart_flag;
-volatile uint8_t isr_i2c_flag;
 
-QueueHandle_t taskManagerQueue;
-QueueHandle_t packetQueue;
+QueueHandle_t uartPacketQueue;
 QueueHandle_t uartSignalQueue;
 QueueHandle_t uartResultQueue;
 
 void USART1_IRQ_handler(void)
 {
-	//This is used to ignore interrupts during startup.
-	//This flag will is set manually before putting data in the uart data register.
-	//Setting the flag and putting the data is done in a critical section.
-	if (!isr_uart_flag)
-	{
-		_USART_SR &= ~(1 << 6);
-	}
-
 	unsigned long tc = _USART_SR & (1 << 6);
 	unsigned long rxne = _USART_SR & (1 << 5);
 	unsigned long ore = _USART_SR & (1 << 3);
 
+	uint8_t data = _USART_DR;
+
 	//TC
 	if (tc)
 	{
+		xQueueSendFromISR(uartSignalQueue, &data, NULL);
 	}
 
 	//RXNE or ORE
 	if (rxne || ore)
 	{
+		xQueueSendFromISR(uartResultQueue, &data, NULL);
 	}
 
 	//Clear TC by writing 0 to it.
@@ -51,36 +44,6 @@ void USART1_IRQ_handler(void)
 
 	//Clear ORE by reading USART_SR and USART_DR.
 	_USART_DR;
-	
-	isr_uart_flag = 0;
-}
-
-//The task manager will delete a task based on task handles send to its queue.
-void manager_task()
-{
-	TaskHandle_t handle;
-
-	//Create init task and wait for it to finish.
-	xTaskCreate(init_task, "init", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xQueueReceive(taskManagerQueue, &handle, portMAX_DELAY);
-	vTaskDelete(handle);
-
-	//Start uart and i2c tasks.
-	xTaskCreate(uart_task, "uart", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(i2c_task, "i2c", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-
-	//Start user, arm, ping, position, rgb tasks.
-	xTaskCreate(user_task, "user", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(arm_task, "arm", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(ping_task, "ping", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(position_task, "position", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-	xTaskCreate(rgb_task, "rgb", 128, NULL, configMAX_PRIORITIES - 1, NULL);
-
-	while (1)
-	{
-		xQueueReceive(taskManagerQueue, &handle, portMAX_DELAY);
-		vTaskDelete(handle);
-	}
 }
 
 void init_task()
@@ -114,73 +77,83 @@ void init_task()
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
+	//Create queues.
+	uartPacketQueue = xQueueCreate(64, sizeof(ax_packet_t));
+	uartSignalQueue = xQueueCreate(64, sizeof(uint8_t));
+	uartResultQueue = xQueueCreate(64, sizeof(uint8_t));
+
+	//Start uart and i2c tasks.
+	xTaskCreate(uart_task, "uart", 128, NULL, 12, NULL);
+	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
+
+	//Start user, arm, ping, position, rgb tasks.
+	//xTaskCreate(user_task, "user", 128, NULL, 10, NULL);
+	//xTaskCreate(arm_task, "arm", 128, NULL, 9, NULL);
+	//xTaskCreate(ping_task, "ping", 128, NULL, 8, NULL);
+	//xTaskCreate(position_task, "position", 128, NULL, 7, NULL);
+	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
+
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
 	/* Set priorities and interrupts */
-	NVIC_SetPriority(37, 0x02);
+	NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); //https://www.freertos.org/RTOS-Cortex-M3-M4.html
+	NVIC_SetPriority(37, 0);
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
 
-	TaskHandle_t handle = xTaskGetCurrentTaskHandle();
-
-	xQueueSend(taskManagerQueue, &handle, portMAX_DELAY);
+	//Init task suicide.
+	vTaskDelete(NULL);
 }
 
 void uart_task()
 {
 	ax_packet_t packet;
-	uint8_t header = 0xFF;
 	uint8_t length;
 	uint8_t type;
 	uint8_t crc;
 	uint8_t dummy;
 	uint8_t bytes;
-	uint8_t byte;
+	uint8_t buffer[16];
 
 	while (1)
 	{
-		xQueueReceive(packetQueue, &packet, portMAX_DELAY);
+		//xQueueReceive(uartPacketQueue, &packet, portMAX_DELAY);
+
+		packet.id = 61;
+		packet.type = PING;
+		packet.params_length = 0;
 
 		length = packet.params_length + 2;
 		type = (uint8_t)packet.type;
 		crc = ax_crc(packet);
 		bytes = 6 + packet.params_length;
-		byte = 0;
+
+		memset(buffer, 0, sizeof(buffer));
+		buffer[0] = 0xFF;
+		buffer[1] = 0xFF;
+		buffer[2] = packet.id;
+		buffer[3] = length;
+		buffer[4] = type;
+		for (int i = 0; i < packet.params_length; ++i)
+		{
+			buffer[5 + i] = packet.params[i];
+		}
+		buffer[bytes - 1] = crc;
+
+		_GPIOB_BSRR |= 1;
 
 		for (int i = 0; i < bytes; ++i)
 		{
-			if (i <= 1)
-			{
-				byte = header;
-			}
-			else if (i == 2)
-			{
-				byte = packet.id;
-			}
-			else if (i == 3)
-			{
-				byte = length;
-			}
-			else if (i == 4)
-			{
-				byte = type;
-			}
-			else if (i >= 5 && i <= bytes - 2)
-			{
-				byte = packet.params[i - 5];
-			}
-			else if (i == bytes - 1)
-			{
-				byte = crc;
-			}
-			
-			taskENTER_CRITICAL();
-			_USART_DR = byte;
-			isr_uart_flag = 1;
-			taskEXIT_CRITICAL();
+			_USART_DR = buffer[i];
+
 			//Get signal from isr when byte has been transmitted.
 			xQueueReceive(uartSignalQueue, &dummy, portMAX_DELAY);
 		}
+
+		continue;
+
+		//This change of direction might be too late.
+		_GPIOB_BSRR |= (1 << 16);
 
 		uint8_t result;
 		uint8_t index = idToIndex(packet.id);
@@ -198,8 +171,7 @@ void uart_task()
 					}
 				}
 				break;
-			//Only supports two byte reads.
-			//And places result in presentPositions only.
+			//Only supports two byte reads and places result in presentPositions only.
 			case READ:
 				bytes = 8;
 				for (int i = 1; i <= bytes; ++i)
@@ -219,6 +191,8 @@ void uart_task()
 				//Invalid type.
 				break;
 		}
+
+		volatile uint8_t a = 99;
 	}
 }
 
@@ -373,7 +347,21 @@ void arm_task()
 
 void ping_task()
 {
+	while (1)
+	{
+		for (uint8_t arm = 10; arm <= 80; arm += 10)
+		{
+			for (uint8_t motor = 1; motor <= 6; ++motor)
+			{
+				ax_packet_t packet;
+				packet.id = arm + motor;
+				packet.type = PING;
+				packet.params_length = 0;
 
+				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+			}
+		}
+	}
 }
 
 void position_task()

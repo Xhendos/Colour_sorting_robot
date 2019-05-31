@@ -52,7 +52,7 @@ typedef struct {
 	uint8_t id;
 	ax_instruction_type_t type;
 	uint8_t params_length;
-	uint8_t params[];
+	uint8_t params[3];
 } ax_packet_t;
 
 typedef union {
@@ -67,12 +67,10 @@ typedef union {
 extern position_t presentPositions[48];
 extern position_t goalPositions[48];
 extern uint8_t pings[48];
-extern volatile uint8_t isr_uart_flag;
-extern volatile uint8_t isr_i2c_flag;
 
-extern TaskHandle_t taskManagerQueue;
-extern TaskHandle_t uartSignalQueue;
-extern TaskHandle_t uartResultQueue;
+extern QueueHandle_t uartPacketQueue;
+extern QueueHandle_t uartSignalQueue;
+extern QueueHandle_t uartResultQueue;
 
 extern void manager_task();
 extern void init_task();

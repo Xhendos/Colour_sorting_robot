@@ -19,9 +19,9 @@ void uart_init()
 
 uint8_t uart_send_byte(uint8_t byte)
 {
-	//while(!(_USART_SR & 0x80));	/* Wait untill the buffer is available */
+	while(!(_USART_SR & 0x80));	/* Wait untill the buffer is available */
 	_USART_DR = byte;
-	//while(!(_USART_SR & 0x40));	/* Wait untill the transmission is done */
+	while(!(_USART_SR & 0x40));	/* Wait untill the transmission is done */
 
 	return 0;
 }
