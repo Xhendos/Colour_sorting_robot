@@ -14,7 +14,7 @@ void uart_init()
 	 */
 	
 	_USART_BRR = 0x10;		/* TODO: validate the baud rate register. */
-	_USART_CR1 |= 0x60;		//0x40 TCIE, 0x20 RXNEIE. TCIE generates interrupt when TC=1. RXNEIE generates interrupt when ORE=1 or RXNE=1.
+	_USART_CR1 |= 0x00;		//0x40 TCIE, 0x20 RXNEIE. TCIE generates interrupt when TC=1. RXNEIE generates interrupt when ORE=1 or RXNE=1.
 }
 
 uint8_t uart_send_byte(uint8_t byte)

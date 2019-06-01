@@ -11,6 +11,8 @@
 position_t presentPositions[48];
 position_t goalPositions[48];
 uint8_t pings[48];
+uint8_t dummy;
+uint8_t inProgress;
 
 QueueHandle_t uartPacketQueue;
 QueueHandle_t uartSignalQueue;
@@ -18,32 +20,83 @@ QueueHandle_t uartResultQueue;
 
 void USART1_IRQ_handler(void)
 {
-	unsigned long tc = _USART_SR & (1 << 6);
-	unsigned long rxne = _USART_SR & (1 << 5);
-	unsigned long ore = _USART_SR & (1 << 3);
+	static ax_packet_t packet;
+	volatile static uint8_t tx[16];
+	volatile static uint8_t rx[16];
+	volatile static uint8_t txn = 0;
+	volatile static uint8_t rxn = 0;
+	volatile static uint8_t txbytes = 0;
+	volatile static uint8_t rxbytes = 0;
 
-	uint8_t data = _USART_DR;
-
-	//TC
-	if (tc)
+	if (!inProgress)
 	{
-		xQueueSendFromISR(uartSignalQueue, &data, NULL);
+		if (xQueueReceiveFromISR(uartPacketQueue, &packet, NULL) == pdFALSE)
+		{
+			return;
+		}
+
+		tx[0] = 0xFF;
+		tx[1] = 0xFF;
+		tx[2] = packet.id;
+		tx[3] = packet.params_length + 2;
+		tx[4] = (uint8_t)packet.type;
+		for (int i = 0; i < packet.params_length; ++i)
+		{
+			tx[5 + i] = packet.params[i];
+		}
+		txbytes = 6 + packet.params_length;
+		tx[txbytes - 1] = ax_crc(packet);
+
+		txn = 0;
+		rxn = 0;
+		rxbytes = 0;
+		inProgress = 1;
 	}
 
-	//RXNE or ORE
-	if (rxne || ore)
+	volatile uint32_t sr = _USART_SR;
+	volatile uint32_t dr = _USART_DR;
+	volatile uint32_t cr1 = _USART_CR1;
+	volatile uint8_t txe = (sr >> 7) & 1;
+	volatile uint8_t tc = (sr >> 6) & 1;
+	volatile uint8_t rxne = (sr >> 5) & 1;
+	volatile uint8_t txeie = (cr1 >> 7) & 1;
+	volatile uint8_t tcie = (cr1 >> 6) & 1;
+	volatile uint8_t rxneie = (cr1 >> 5) & 1;
+	volatile uint8_t data = (uint8_t)dr;
+
+	if (tcie && tc)
 	{
-		xQueueSendFromISR(uartResultQueue, &data, NULL);
+		_CR1_TCIE_CLEAR;
+		_CR1_RXNEIE_SET;
+		_GPIOB_BSRR |= (1 << 16);
 	}
 
-	//Clear TC by writing 0 to it.
-	_USART_SR &= ~(1 << 6);
+	if (txeie && txe)
+	{
+		if (txn < txbytes)
+		{
+			_GPIOB_BSRR |= 1;
+			_USART_DR = tx[txn];
+			++txn;
+		}
+		else
+		{
+			_CR1_TXEIE_CLEAR;
+			_CR1_TCIE_SET;
+		}
+	}
 
-	//Clear RXNE by reading USART_SR.
-	_USART_SR;
+	if (rxneie && rxne)
+	{
+		rx[rxn] = data;
+		++rxn;
 
-	//Clear ORE by reading USART_SR and USART_DR.
-	_USART_DR;
+		if (rxn == 6)
+		{
+			_CR1_RXNEIE_CLEAR;
+			inProgress = 0;
+		}
+	}
 }
 
 void init_task()
@@ -77,13 +130,15 @@ void init_task()
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
+	//Good pings are 0x0 and could otherwise not be distinguished.
+	memset(pings, ~0, sizeof(pings));
+
 	//Create queues.
 	uartPacketQueue = xQueueCreate(64, sizeof(ax_packet_t));
 	uartSignalQueue = xQueueCreate(64, sizeof(uint8_t));
 	uartResultQueue = xQueueCreate(64, sizeof(uint8_t));
 
 	//Start uart and i2c tasks.
-	xTaskCreate(uart_task, "uart", 128, NULL, 12, NULL);
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
 
 	//Start user, arm, ping, position, rgb tasks.
@@ -103,93 +158,6 @@ void init_task()
 
 	//Init task suicide.
 	vTaskDelete(NULL);
-}
-
-void uart_task()
-{
-	ax_packet_t packet;
-	uint8_t length;
-	uint8_t type;
-	uint8_t crc;
-	uint8_t dummy;
-	uint8_t bytes;
-	uint8_t buffer[16];
-
-	while (1)
-	{
-		xQueueReceive(uartPacketQueue, &packet, portMAX_DELAY);
-
-		length = packet.params_length + 2;
-		type = (uint8_t)packet.type;
-		crc = ax_crc(packet);
-		bytes = 6 + packet.params_length;
-
-		memset(buffer, 0, sizeof(buffer));
-		buffer[0] = 0xFF;
-		buffer[1] = 0xFF;
-		buffer[2] = packet.id;
-		buffer[3] = length;
-		buffer[4] = type;
-		for (int i = 0; i < packet.params_length; ++i)
-		{
-			buffer[5 + i] = packet.params[i];
-		}
-		buffer[bytes - 1] = crc;
-
-		_GPIOB_BSRR |= 1;
-
-		for (int i = 0; i < bytes; ++i)
-		{
-			_USART_DR = buffer[i];
-
-			//Get signal from isr when byte has been transmitted.
-			xQueueReceive(uartSignalQueue, &dummy, portMAX_DELAY);
-		}
-
-		continue;
-
-		//This change of direction might be too late.
-		_GPIOB_BSRR |= (1 << 16);
-
-		uint8_t result;
-		uint8_t index = idToIndex(packet.id);
-
-		switch (packet.type)
-		{
-			case PING:
-				bytes = 6;
-				for (int i = 1; i <= bytes; ++i)
-				{
-					xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
-					if (i == 5)
-					{
-						pings[index] = result;
-					}
-				}
-				break;
-			//Only supports two byte reads and places result in presentPositions only.
-			case READ:
-				bytes = 8;
-				for (int i = 1; i <= bytes; ++i)
-				{
-					xQueueReceive(uartResultQueue, &result, portMAX_DELAY);
-					if (i == 6)
-					{
-						presentPositions[index].xa[0] = result;
-					}
-					else if (i == 7)
-					{
-						presentPositions[index].xa[1] = result;
-					}
-				}
-				break;
-			default:
-				//Invalid type.
-				break;
-		}
-
-		volatile uint8_t a = 99;
-	}
 }
 
 void i2c_task()
@@ -350,11 +318,16 @@ void ping_task()
 			for (uint8_t motor = 1; motor <= 6; ++motor)
 			{
 				ax_packet_t packet;
-				packet.id = arm + motor;
+				//packet.id = arm + motor;
+				packet.id = 61;
 				packet.type = PING;
 				packet.params_length = 0;
 
-				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+				xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10));
+				if (!inProgress)
+				{
+					_CR1_TXEIE_SET;
+				}
 			}
 		}
 	}

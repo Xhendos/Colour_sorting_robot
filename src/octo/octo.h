@@ -67,6 +67,8 @@ typedef union {
 extern position_t presentPositions[48];
 extern position_t goalPositions[48];
 extern uint8_t pings[48];
+extern uint8_t dummy;
+extern uint8_t inProgress;
 
 extern QueueHandle_t uartPacketQueue;
 extern QueueHandle_t uartSignalQueue;
@@ -74,7 +76,6 @@ extern QueueHandle_t uartResultQueue;
 
 extern void manager_task();
 extern void init_task();
-extern void uart_task();
 extern void i2c_task();
 extern void user_task();
 extern void arm_task();
