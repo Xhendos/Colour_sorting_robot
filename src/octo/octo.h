@@ -5,6 +5,7 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "task.h"
+#include "ax12.h"
 
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
@@ -26,44 +27,6 @@
 #define GPIOC_HIGH      (*((volatile uint32_t *) 0x40011004))
 #define GPIOC_SR		(*((volatile uint32_t *) 0x40011010))
 
-typedef enum {
-	PING = 1,
-	READ = 2,
-	WRITE = 3,
-	REG_WRITE = 4,
-	ACTION = 5,
-	FACTORY_RESET = 6,
-	REBOOT = 8,
-	SYNC_WRITE = 131,
-	BULK_READ = 156,
-} ax_instruction_type_t;
-
-typedef struct {
-	uint8_t flag;
-	uint8_t arm;
-	uint16_t r1;
-	uint16_t r2;
-	uint8_t state;
-	char *from;
-	char *to;
-} instruction_t;
-
-typedef struct {
-	uint8_t id;
-	ax_instruction_type_t type;
-	uint8_t params_length;
-	uint8_t params[3];
-} ax_packet_t;
-
-typedef union {
-	struct strct {
-		uint8_t l;
-		uint8_t h;
-	} lh;
-	uint16_t x;
-	uint8_t xa[2];
-} position_t;
-
 extern position_t presentPositions[48];
 extern position_t goalPositions[48];
 extern uint8_t pings[48];
@@ -82,8 +45,6 @@ extern void arm_task();
 extern void ping_task();
 extern void position_task();
 extern void rgb_task();
-
-extern uint8_t ax_crc(ax_packet_t packet);
 
 extern uint8_t idToIndex(uint8_t id);
 extern uint8_t indexToId(uint8_t index);

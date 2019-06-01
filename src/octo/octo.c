@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "ax12.h"
 #include "octo.h"
 #include "uart.h"
 #include "i2c.h"
@@ -27,6 +28,7 @@ void USART1_IRQ_handler(void)
 	volatile static uint8_t rxn = 0;
 	volatile static uint8_t txbytes = 0;
 	volatile static uint8_t rxbytes = 0;
+	volatile static uint8_t index = 0;
 
 	if (!inProgress)
 	{
@@ -45,11 +47,21 @@ void USART1_IRQ_handler(void)
 			tx[5 + i] = packet.params[i];
 		}
 		txbytes = 6 + packet.params_length;
-		tx[txbytes - 1] = ax_crc(packet);
+		tx[txbytes - 1] = ax_crc(tx[2], tx[3], tx[4], packet.params, packet.params_length);
+
+		switch (packet.type)
+		{
+			case AX_PING:
+				rxbytes = 6;
+				break;
+			case AX_READ:
+				rxbytes = 6 + packet.params[1];
+				break;
+		}
 
 		txn = 0;
 		rxn = 0;
-		rxbytes = 0;
+		index = idToIndex(packet.id);
 		inProgress = 1;
 	}
 
@@ -91,8 +103,24 @@ void USART1_IRQ_handler(void)
 		rx[rxn] = data;
 		++rxn;
 
-		if (rxn == 6)
+		if (rxn == rxbytes)
 		{
+			switch (packet.type)
+			{
+				case AX_PING:
+					pings[index] = rx[4];
+					break;
+				case AX_READ:
+					switch (packet.params[0])
+					{
+						case AX_PRESENT_POSITION:
+							presentPositions[index].xa[0] = rx[4];
+							presentPositions[index].xa[1] = rx[5];
+							break;
+					}
+					break;
+			}
+
 			_CR1_RXNEIE_CLEAR;
 			inProgress = 0;
 		}
@@ -320,10 +348,18 @@ void ping_task()
 				ax_packet_t packet;
 				//packet.id = arm + motor;
 				packet.id = 61;
-				packet.type = PING;
+				packet.type = AX_PING;
 				packet.params_length = 0;
 
 				xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10));
+
+				packet.type = AX_READ;
+				packet.params[0] = AX_PRESENT_POSITION;
+				packet.params[1] = 2;
+				packet.params_length = 2;
+
+				xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10));
+
 				if (!inProgress)
 				{
 					_CR1_TXEIE_SET;
@@ -341,15 +377,6 @@ void position_task()
 void rgb_task()
 {
 
-}
-
-uint8_t ax_crc(ax_packet_t packet)
-{
-	uint8_t crc = packet.id + (packet.params_length + 2) + (uint8_t)packet.type;
-	for (int i = 0; i < packet.params_length; ++i) {
-		crc += packet.params[i];
-	}
-	return ~crc;
 }
 
 uint8_t idToIndex(uint8_t id)
