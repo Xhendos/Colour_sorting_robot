@@ -95,7 +95,7 @@ uint8_t i2c_read_byte(uint8_t address)
 uint16_t i2c_read_2_bytes(uint8_t address)
 {
 	uint16_t ret;
-
+	uint8_t tmp;
 	_I2C_CR1 |= (1 << 8);			/* Generate a start bit */
 	while(!(_I2C_SR1 & 0x01));		/* Wait untill start bit has been generated succesfully */
 
@@ -112,8 +112,11 @@ uint16_t i2c_read_2_bytes(uint8_t address)
 
 	_I2C_CR1 |= (1 << 9);		/* Send a stop bit */
 	
-	ret = (_I2C_DR << 8);
-	ret |= (_I2C_DR);	
+	tmp = _I2C_DR;
+	ret = (tmp << 8);
+	tmp = _I2C_DR;
+	ret |= tmp;
+	
 	while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
 
 	_I2C_CR1 &= ~(1 << 11);		/* Clear the POS bit */
