@@ -25,7 +25,7 @@
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
 
-
+uint8_t test = 0;
 int main(void)
 {
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
@@ -75,15 +75,15 @@ int main(void)
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
-	//rgbInit();
+	rgb_init();
 
-	while(1)
-	{
-		i2c_begin_transmission(0x29, 0x12 | TCS34725_COMMAND_BIT);
-		i2c_stop_transmission();		
-		
-		volatile uint8_t ret = i2c_read_byte(0x29);
-	}
+
+
+	while (1) {
+        test = getRed(0);
+        //test = getBlue(0);
+        //test = getGreen(0);
+    }
 
 	return 0;					/* We should never reach this point */
 }
