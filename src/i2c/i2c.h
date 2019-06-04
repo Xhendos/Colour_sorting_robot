@@ -52,6 +52,6 @@ uint8_t i2c_stop_transmission();
 
 uint8_t i2c_read_byte(uint8_t address);
 
-uint16_t i2c_read_2_bytes();
+uint16_t i2c_read_2_bytes(uint8_t address);
 
 #endif	/* _I2C_H */
