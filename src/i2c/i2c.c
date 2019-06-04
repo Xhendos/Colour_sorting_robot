@@ -99,10 +99,10 @@ uint16_t i2c_read_2_bytes(uint8_t address)
 	_I2C_CR1 |= (1 << 8);			/* Generate a start bit */
 	while(!(_I2C_SR1 & 0x01));		/* Wait untill start bit has been generated succesfully */
 
-	_I2C_DR |= (address << 1) | 1;	/* Sent the address bit and a read bit*/
+	_I2C_DR = (address << 1) | 1;	/* Sent the address bit and a read bit*/
 	while(!(_I2C_SR1 & 0x02));		/* Wait untill an acknowledgement has been received */
 	
-	_I2C_CR1 |= (1 << 0x800);	/* Set the POS bit */
+	_I2C_CR1 |= (1 << 11);			/* Set the POS bit */
 	_I2C_SR1;
 	_I2C_SR2;					/* Dummy read to clear the ADDR flag */
 
@@ -116,8 +116,8 @@ uint16_t i2c_read_2_bytes(uint8_t address)
 	ret |= (_I2C_DR);	
 	while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
 
-	_I2C_CR1 &= ~(1 << 0x800);	/* Clear the POS bit */
-	_I2C_CR1 |= (1 << 0x400);	/* Set the acknowledgement bit */
+	_I2C_CR1 &= ~(1 << 11);		/* Clear the POS bit */
+	_I2C_CR1 |= (1 << 10);		/* Set the acknowledgement bit */
 
 	return ret;
 }
