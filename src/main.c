@@ -10,6 +10,8 @@
 
 #include "ax12.h"
 
+#define ARM_ID (41)
+
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
 
@@ -111,56 +113,56 @@ int main(void)
 
 	uint8_t n = 1;
 
-	ax_write(61, TORQUE_ENABLE, 0);
-	ax_write(61, MOVING_SPEED, 50);
-	ax_write(61, GOAL_POSITION, 1023);
-	ax_write(61, TORQUE_ENABLE, 1);
+	ax_write(ARM_ID, TORQUE_ENABLE, 0);
+	ax_write(ARM_ID, MOVING_SPEED, 50);
+	ax_write(ARM_ID, GOAL_POSITION, 1023);
+	ax_write(ARM_ID, TORQUE_ENABLE, 1);
 
 	while(1)
 	{
-		modelNumber = ax_read(61, MODEL_NUMBER);
-		firmwareVersion = ax_read(61, FIRMWARE_VERSION);
-		id = ax_read(61, ID);
-		baudRate = ax_read(61, BAUD_RATE);
-		returnDelayTime = ax_read(61, RETURN_DELAY_TIME);
-		cwAngleLimit = ax_read(61, CW_ANGLE_LIMIT);
-		ccwAngleLimit = ax_read(61, CCW_ANGLE_LIMIT);
-		temperatureLimit = ax_read(61, TEMPERATURE_LIMIT);
-		minVoltageLimit = ax_read(61, MIN_VOLTAGE_LIMIT);
-		maxVoltageLimit = ax_read(61, MAX_VOLTAGE_LIMIT);
-		maxTorque = ax_read(61, MAX_TORQUE);
-		statusReturnLevel = ax_read(61, STATUS_RETURN_LEVEL);
-		alarmLed = ax_read(61, ALARM_LED);
-		shutdown = ax_read(61, SHUTDOWN);
-		torqueEnable = ax_read(61, TORQUE_ENABLE);
-		led = ax_read(61, LED);
-		cwComplianceMargin = ax_read(61, CW_COMPLIANCE_MARGIN);
-		ccwComplianceMarge = ax_read(61, CCW_COMPLIANCE_MARGIN);
-		cwComplianceSlope = ax_read(61, CW_COMPLIANCE_SLOPE);
-		ccwComplianceSlope = ax_read(61, CCW_COMPLIANCE_SLOPE);
-		goalPosition = ax_read(61, GOAL_POSITION);
-		movingSpeed = ax_read(61, MOVING_SPEED);
-		torqueLimit = ax_read(61, TORQUE_LIMIT);
-		presentPosition = ax_read(61, PRESENT_POSITION);
-		presentSpeed = ax_read(61, PRESENT_SPEED);
-		presentLoad = ax_read(61, PRESENT_LOAD);
-		presentVoltage = ax_read(61, PRESENT_VOLTAGE);
-		presentTemperature = ax_read(61, PRESENT_TEMPERATURE);
-		registered = ax_read(61, REGISTERED);
-		moving = ax_read(61, MOVING);
-		lock = ax_read(61, LOCK);
-		punch = ax_read(61, PUNCH);
+		modelNumber = ax_read(ARM_ID, MODEL_NUMBER);
+		firmwareVersion = ax_read(ARM_ID, FIRMWARE_VERSION);
+		id = ax_read(ARM_ID, ID);
+		baudRate = ax_read(ARM_ID, BAUD_RATE);
+		returnDelayTime = ax_read(ARM_ID, RETURN_DELAY_TIME);
+		cwAngleLimit = ax_read(ARM_ID, CW_ANGLE_LIMIT);
+		ccwAngleLimit = ax_read(ARM_ID, CCW_ANGLE_LIMIT);
+		temperatureLimit = ax_read(ARM_ID, TEMPERATURE_LIMIT);
+		minVoltageLimit = ax_read(ARM_ID, MIN_VOLTAGE_LIMIT);
+		maxVoltageLimit = ax_read(ARM_ID, MAX_VOLTAGE_LIMIT);
+		maxTorque = ax_read(ARM_ID, MAX_TORQUE);
+		statusReturnLevel = ax_read(ARM_ID, STATUS_RETURN_LEVEL);
+		alarmLed = ax_read(ARM_ID, ALARM_LED);
+		shutdown = ax_read(ARM_ID, SHUTDOWN);
+		torqueEnable = ax_read(ARM_ID, TORQUE_ENABLE);
+		led = ax_read(ARM_ID, LED);
+		cwComplianceMargin = ax_read(ARM_ID, CW_COMPLIANCE_MARGIN);
+		ccwComplianceMarge = ax_read(ARM_ID, CCW_COMPLIANCE_MARGIN);
+		cwComplianceSlope = ax_read(ARM_ID, CW_COMPLIANCE_SLOPE);
+		ccwComplianceSlope = ax_read(ARM_ID, CCW_COMPLIANCE_SLOPE);
+		goalPosition = ax_read(ARM_ID, GOAL_POSITION);
+		movingSpeed = ax_read(ARM_ID, MOVING_SPEED);
+		torqueLimit = ax_read(ARM_ID, TORQUE_LIMIT);
+		presentPosition = ax_read(ARM_ID, PRESENT_POSITION);
+		presentSpeed = ax_read(ARM_ID, PRESENT_SPEED);
+		presentLoad = ax_read(ARM_ID, PRESENT_LOAD);
+		presentVoltage = ax_read(ARM_ID, PRESENT_VOLTAGE);
+		presentTemperature = ax_read(ARM_ID, PRESENT_TEMPERATURE);
+		registered = ax_read(ARM_ID, REGISTERED);
+		moving = ax_read(ARM_ID, MOVING);
+		lock = ax_read(ARM_ID, LOCK);
+		punch = ax_read(ARM_ID, PUNCH);
 
 		if (!moving && abs(presentPosition - goalPosition) <= 2)
 		{
 			if (n)
 			{
-				ax_write(61, GOAL_POSITION, 0);
+				ax_write(ARM_ID, GOAL_POSITION, 0);
 				n = 0;
 			}
 			else
 			{
-				ax_write(61, GOAL_POSITION, 1023);
+				ax_write(ARM_ID, GOAL_POSITION, 1023);
 				n = 1;
 			}
 		}
