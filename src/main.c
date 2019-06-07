@@ -10,7 +10,7 @@
 
 #include "ax12.h"
 
-#define ARM_ID (41)
+#define ARM_ID (42)
 
 #define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
 #define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
@@ -113,10 +113,10 @@ int main(void)
 
 	uint8_t n = 1;
 
-	ax_write(ARM_ID, TORQUE_ENABLE, 0);
-	ax_write(ARM_ID, MOVING_SPEED, 50);
-	ax_write(ARM_ID, GOAL_POSITION, 1023);
-	ax_write(ARM_ID, TORQUE_ENABLE, 1);
+	//ax_write(ARM_ID, TORQUE_ENABLE, 0);
+	//ax_write(ARM_ID, MOVING_SPEED, 50);
+	//ax_write(ARM_ID, GOAL_POSITION, 1023);
+	//ax_write(ARM_ID, TORQUE_ENABLE, 1);
 
 	while(1)
 	{
@@ -153,19 +153,19 @@ int main(void)
 		lock = ax_read(ARM_ID, LOCK);
 		punch = ax_read(ARM_ID, PUNCH);
 
-		if (!moving && abs(presentPosition - goalPosition) <= 2)
-		{
-			if (n)
-			{
-				ax_write(ARM_ID, GOAL_POSITION, 0);
-				n = 0;
-			}
-			else
-			{
-				ax_write(ARM_ID, GOAL_POSITION, 1023);
-				n = 1;
-			}
-		}
+		//if (!moving && abs(presentPosition - goalPosition) <= 2)
+		//{
+		//	if (n)
+		//	{
+		//		ax_write(ARM_ID, GOAL_POSITION, 0);
+		//		n = 0;
+		//	}
+		//	else
+		//	{
+		//		ax_write(ARM_ID, GOAL_POSITION, 1023);
+		//		n = 1;
+		//	}
+		//}
 	}
 	
 	return 0;					/* We should never reach this point */
