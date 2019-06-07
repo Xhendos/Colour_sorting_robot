@@ -1,6 +1,9 @@
 #include "i2c.h"
 #include <stdint.h>
 
+/* GPIOB */                                                    
+#define _GPIOB_CRL      (*((volatile unsigned long *) 0x40010C00))      /* Port configuration register low */
+
 /* i2c_init() assumes that PB6 and PB7 are configured to be an alternate function pin */
 void i2c_init()
 {
@@ -94,28 +97,32 @@ uint8_t i2c_read_byte(uint8_t address)
 
 uint16_t i2c_read_2_bytes(uint8_t address)
 {
-	uint16_t ret;
+	uint16_t ret = 0;
 	uint8_t tmp;
 	_I2C_CR1 |= (1 << 8);			/* Generate a start bit */
 	while(!(_I2C_SR1 & 0x01));		/* Wait untill start bit has been generated succesfully */
 
 	_I2C_DR = (address << 1) | 1;	/* Sent the address bit and a read bit*/
 	while(!(_I2C_SR1 & 0x02));		/* Wait untill an acknowledgement has been received */
+						
+									/* See errata section 2.13.1 why we should change SCL to GPIO and alternate function */
+	_GPIOB_CRL &= ~(1 << 25);		/* Change alternative function on I2C_SCL (PB6) [see errata 2.13.1] */
 	
 	_I2C_CR1 |= (1 << 11);			/* Set the POS bit */
 	_I2C_SR1;
 	_I2C_SR2;					/* Dummy read to clear the ADDR flag */
 
 	_I2C_CR1 &= ~(1 << 10);		/* Do not return an acknowledgement */
+	_GPIOB_CRL |= (1 << 25);	/* Set alternative function on I2C_SCL (PB6) [see errata 2.13.1]*/	
 
 	while(!(_I2C_SR1 & 0x04));	/* Wait untill byte sent succesfully */
 
 	_I2C_CR1 |= (1 << 9);		/* Send a stop bit */
 	
 	tmp = _I2C_DR;
-	ret = (tmp << 8);
+	ret = (tmp);
 	tmp = _I2C_DR;
-	ret |= tmp;
+	ret |= (tmp << 8);
 	
 	while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
 
