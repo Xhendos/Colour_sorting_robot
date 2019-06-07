@@ -34,8 +34,7 @@ extern uint8_t dummy;
 extern uint8_t inProgress;
 
 extern QueueHandle_t uartPacketQueue;
-extern QueueHandle_t uartSignalQueue;
-extern QueueHandle_t uartResultQueue;
+extern QueueHandle_t usartPacketQueue;
 
 extern void manager_task();
 extern void init_task();

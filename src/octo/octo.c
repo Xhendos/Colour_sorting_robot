@@ -16,8 +16,7 @@ uint8_t dummy;
 uint8_t inProgress;
 
 QueueHandle_t uartPacketQueue;
-QueueHandle_t uartSignalQueue;
-QueueHandle_t uartResultQueue;
+QueueHandle_t usartPacketQueue;
 
 void USART1_IRQ_handler(void)
 {
@@ -32,7 +31,7 @@ void USART1_IRQ_handler(void)
 
 	if (!inProgress)
 	{
-		if (xQueueReceiveFromISR(uartPacketQueue, &packet, NULL) == pdFALSE)
+		if (xQueueReceiveFromISR(usartPacketQueue, &packet, NULL) == pdFALSE)
 		{
 			return;
 		}
@@ -127,6 +126,43 @@ void USART1_IRQ_handler(void)
 	}
 }
 
+void uart_task()
+{
+	static ax_packet_t packet;
+	static uint8_t received = 0;
+	static uint8_t send = 0;
+
+	while (1)
+	{
+		if (!received)
+		{
+			if (xQueueReceive(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdTRUE)
+			{
+				received = 1;
+			}
+		}
+		else
+		{
+			if (!send)
+			{
+				if (xQueueSend(usartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdTRUE)
+				{
+					send = 1;
+				}
+			}
+			else
+			{
+				if (!inProgress)
+				{
+					_CR1_TXEIE_SET;
+					received = 0;
+					send = 0;
+				}
+			}
+		}
+	}
+}
+
 void init_task()
 {
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
@@ -162,9 +198,8 @@ void init_task()
 	memset(pings, ~0, sizeof(pings));
 
 	//Create queues.
-	uartPacketQueue = xQueueCreate(64, sizeof(ax_packet_t));
-	uartSignalQueue = xQueueCreate(64, sizeof(uint8_t));
-	uartResultQueue = xQueueCreate(64, sizeof(uint8_t));
+	uartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
+	usartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
 
 	//Start uart and i2c tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
@@ -172,6 +207,7 @@ void init_task()
 	//Start user, arm, ping, position, rgb tasks.
 	//xTaskCreate(user_task, "user", 128, NULL, 10, NULL);
 	//xTaskCreate(arm_task, "arm", 128, NULL, 9, NULL);
+	xTaskCreate(uart_task, "ping", 128, NULL, 11, NULL);
 	xTaskCreate(ping_task, "ping", 128, NULL, 8, NULL);
 	//xTaskCreate(position_task, "position", 128, NULL, 7, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
@@ -341,13 +377,12 @@ void ping_task()
 {
 	while (1)
 	{
-		for (uint8_t arm = 10; arm <= 80; arm += 10)
+		for (uint8_t arm = 40; arm <= 40; arm += 10)
 		{
-			for (uint8_t motor = 1; motor <= 6; ++motor)
+			for (uint8_t motor = 2; motor <= 6; ++motor)
 			{
 				ax_packet_t packet;
-				//packet.id = arm + motor;
-				packet.id = 42;
+				packet.id = arm + motor;
 				packet.type = AX_PING;
 				packet.params_length = 0;
 
@@ -359,11 +394,6 @@ void ping_task()
 				packet.params_length = 2;
 
 				xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10));
-
-				if (!inProgress)
-				{
-					_CR1_TXEIE_SET;
-				}
 			}
 		}
 	}
