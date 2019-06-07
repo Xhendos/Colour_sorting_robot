@@ -347,7 +347,7 @@ void ping_task()
 			{
 				ax_packet_t packet;
 				//packet.id = arm + motor;
-				packet.id = 61;
+				packet.id = 42;
 				packet.type = AX_PING;
 				packet.params_length = 0;
 
