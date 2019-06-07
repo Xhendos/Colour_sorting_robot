@@ -113,8 +113,8 @@ void USART1_IRQ_handler(void)
 					switch (packet.params[0])
 					{
 						case AX_PRESENT_POSITION:
-							presentPositions[index].xa[0] = rx[4];
-							presentPositions[index].xa[1] = rx[5];
+							presentPositions[index].xa[0] = rx[5];
+							presentPositions[index].xa[1] = rx[6];
 							break;
 					}
 					break;
@@ -196,6 +196,8 @@ void init_task()
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
+	memset(presentPositions, 0, sizeof(presentPositions));
+	memset(goalPositions, 0, sizeof(presentPositions));
 
 	//Create queues.
 	uartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
@@ -413,14 +415,14 @@ uint8_t idToIndex(uint8_t id)
 {
 	uint8_t motor = id % 10;
 	uint8_t arm = (id - motor) / 10;
-	return (arm - 1) * 6 + (motor - 1);
+	return arm * 6 + (motor - 1);
 }
 
 uint8_t indexToId(uint8_t index)
 {
 	uint8_t motor = (index % 6) + 1;
-	uint8_t arm = (index / 6) + 1;
-	return (arm * 10 + motor);
+	uint8_t arm = (index / 6) * 10;
+	return 10 + motor;
 }
 
 void rotate(uint8_t arm, uint16_t aDegrees)
