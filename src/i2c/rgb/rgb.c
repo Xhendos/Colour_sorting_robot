@@ -162,14 +162,9 @@ struct RGB getRGB(uint8_t position)
  */
 uint8_t getRed(uint8_t position)
 {
-    uint16_t tmpRed = 0, tmpClear = 0;
+    volatile uint16_t tmpRed = 0, tmpClear = 0;
+    float fRed = 0;
     uint8_t red = 0;
-
-    /* read low Byte red */
-    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_RDATA | TCS34725_COMMAND_BIT);
-    i2c_stop_transmission();
-
-    tmpRed = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
@@ -177,7 +172,14 @@ uint8_t getRed(uint8_t position)
 
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
-    red = (float)(tmpRed / tmpClear) * 255.0;
+    /* read low Byte red */
+    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_RDATA | TCS34725_COMMAND_BIT);
+    i2c_stop_transmission();
+
+    tmpRed = i2c_read_2_bytes(TCS34725_ADDRESS);
+
+    fRed = (float)((float)tmpRed / (float)tmpClear) * 255.0;
+    red = fRed;
 
     return red;
 }
@@ -187,41 +189,24 @@ uint8_t getRed(uint8_t position)
  */
 uint8_t getGreen(uint8_t position)
 {
-    /* Read colour bytes */
-    volatile uint8_t highByte = 0, lowByte = 0;
-    /* Clear colour bytes for determining true red colour from 0 to 255 */
-    volatile uint8_t highByteClear = 0, lowByteClear = 0;
-
-    uint16_t tmpGreen = 0, tmpClear = 0;
+    volatile uint16_t tmpGreen = 0, tmpClear = 0;
+    float fGreen = 0;
     uint8_t green = 0;
-
-    /* read low Byte red */
-    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_GDATA | TCS34725_COMMAND_BIT);
-    i2c_stop_transmission();
-
-    lowByte = i2c_read_byte(TCS34725_ADDRESS);
-
-    /* read high shadow byte */
-    highByte = i2c_read_byte(TCS34725_ADDRESS);
 
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
 
-    lowByteClear = i2c_read_byte(TCS34725_ADDRESS);
+    tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
-    /* read high shadow Byte clear */
-    highByteClear = i2c_read_byte(TCS34725_ADDRESS);
+    /* read low Byte Green */
+    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_GDATA | TCS34725_COMMAND_BIT);
+    i2c_stop_transmission();
 
-    tmpGreen = tmpGreen | highByte;
-    tmpGreen = tmpGreen << 8;
-    tmpGreen = tmpGreen | lowByte;
-    tmpClear = tmpClear | highByteClear;
-    tmpClear = tmpClear << 8;
-    tmpClear = tmpClear | lowByteClear;
+    tmpGreen = i2c_read_2_bytes(TCS34725_ADDRESS);
 
-
-    green = (float)(tmpGreen / tmpClear) * 255.0;
+    fGreen = (float)((float)tmpGreen / (float)tmpClear) * 255.0;
+    green = fGreen;
 
     return green;
 }
@@ -231,41 +216,24 @@ uint8_t getGreen(uint8_t position)
  */
 uint8_t getBlue(uint8_t position)
 {
-    /* Read colour bytes */
-    volatile uint8_t highByte = 0, lowByte = 0;
-    /* Clear colour bytes for determining true red colour from 0 to 255 */
-    volatile uint8_t highByteClear = 0, lowByteClear = 0;
-
-    uint16_t tmpBlue = 0, tmpClear = 0;
+    volatile uint16_t tmpBlue = 0, tmpClear = 0;
+    float fBlue = 0;
     uint8_t blue = 0;
-
-    /* read low Byte blue */
-    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_BDATA | TCS34725_COMMAND_BIT);
-    i2c_stop_transmission();
-
-    lowByte = i2c_read_byte(TCS34725_ADDRESS);
-
-    /* read high Byte blue */
-    highByte = i2c_read_byte(TCS34725_ADDRESS);
 
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
 
-    lowByteClear = i2c_read_byte(TCS34725_ADDRESS);
+    tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
-    /*read High shadow Byte clear */
-    highByteClear = i2c_read_byte(TCS34725_ADDRESS);
+    /* read low Byte red */
+    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_BDATA | TCS34725_COMMAND_BIT);
+    i2c_stop_transmission();
 
-    tmpBlue = tmpBlue | highByte;
-    tmpBlue = tmpBlue << 8;
-    tmpBlue = tmpBlue | lowByte;
-    tmpClear = tmpClear | highByteClear;
-    tmpClear = tmpClear << 8;
-    tmpClear = tmpClear | lowByteClear;
+    tmpBlue = i2c_read_2_bytes(TCS34725_ADDRESS);
 
-
-    blue = (float)(tmpBlue / tmpClear) * 255.0;
+    fBlue = (float)((float)tmpBlue / (float)tmpClear) * 255.0;
+    blue = fBlue;
 
     return blue;
 }

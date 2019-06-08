@@ -25,7 +25,8 @@
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
 
-uint8_t test = 0;
+struct RGB test;
+
 int main(void)
 {
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
@@ -80,9 +81,7 @@ int main(void)
 
 
 	while (1) {
-        test = getRed(0);
-        //test = getBlue(0);
-        //test = getGreen(0);
+        test = getRGB(0);
     }
 
 	return 0;					/* We should never reach this point */
