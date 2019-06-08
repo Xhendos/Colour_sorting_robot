@@ -18,6 +18,9 @@ uint8_t inProgress;
 QueueHandle_t uartPacketQueue;
 QueueHandle_t usartPacketQueue;
 QueueHandle_t uartSignalQueue;
+QueueHandle_t armInstructionQueue;
+
+TaskHandle_t armHandle;
 
 void USART1_IRQ_handler(void)
 {
@@ -167,17 +170,21 @@ void init_task()
 	memset(presentPositions, 0, sizeof(presentPositions));
 	memset(goalPositions, 0, sizeof(presentPositions));
 
+    //Task handles.
+    TaskHandle_t armHandle;
+
 	//Queues.
 	uartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
 	usartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
 	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
+	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    //xTaskCreate(arm_task, "arm", 128, NULL, 2, NULL);
+    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(uart_task, "uart", 128, NULL, 3, NULL);
-	xTaskCreate(ping_task, "ping", 128, NULL, 7, NULL);
-	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 1, NULL);
+	xTaskCreate(ping_task, "ping", 128, NULL, 3, NULL);
+	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
@@ -187,6 +194,12 @@ void init_task()
 	NVIC_SetPriority(37, 0);
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
+
+    //Notify arm task that queue is filled with instructions.
+    //This should be done by the task that calculates the instructions.
+    instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
+    xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
+    xTaskNotifyGive(armHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
@@ -231,124 +244,124 @@ void uart_task()
 
 void arm_task()
 {
-    uint8_t index = idToIndex(ARM_4_BASE + MOTOR_A);
-	goalPositions[index].x = DEGREES_TO_UNITS(150);
-	goalPositions[++index].x = DEGREES_TO_UNITS(195);
-	goalPositions[++index].x = DEGREES_TO_UNITS(60);
-	goalPositions[++index].x = DEGREES_TO_UNITS(60);
-	goalPositions[++index].x = DEGREES_TO_UNITS(150);
-	goalPositions[++index].x = DEGREES_TO_UNITS(150);
+    static instruction_t instructions[64];
+    volatile static uint8_t count = 0;
+    volatile static instruction_t *instruction;
+    volatile static instruction_t *previous_instruction;
+    volatile static uint8_t instruction_allowed;
+    volatile static uint8_t instruction_stateChangeComplete;
+    volatile static uint8_t index;
 
-	instruction_t ins1 = {0, ARM_4, 240, 60, 0, "t5", "t6"};
-	instruction_t *inss[] = {&ins1};
-	uint8_t inss_length = sizeof(inss) / sizeof(instruction_t *);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-	while (1)
-	{
-		uint8_t flags = 0;
-		for (int i = 0; i < inss_length; ++i)
-		{
-			instruction_t *ins = inss[i];
-			if (ins->flag)
-			{
-				++flags;
-				continue;
-			}
-			else
-			{
-				uint8_t allowed = 1;
-				for (int j = 0; j < i; ++j)
-				{
-					instruction_t *prev_ins = inss[j];
-					if (prev_ins->flag)
-					{
-						continue;
-					}
-					else
-					{
-						if (strcmp(ins->from, prev_ins->from) == 0
-							|| strcmp(ins->from, prev_ins->to) == 0
-							|| strcmp(ins->to, prev_ins->from) == 0
-							|| strcmp(ins->to, prev_ins->to) == 0)
-						{
-							allowed = 0;
-							break;
-						}
-					}
-				}
+    while(uxQueueMessagesWaiting(armInstructionQueue))
+    {
+        if (xQueueReceive(armInstructionQueue, &instructions[count], pdMS_TO_TICKS(10)) == pdTRUE)
+        {
+            ++count;
+        }
+    }
 
-				if (!allowed)
-				{
-					continue;
-				}
+    while (1)
+    {
+        for (uint8_t n = 0; n < count; ++n)
+        {
+            instruction = &instructions[n];
 
-				uint8_t stateChangeComplete = 1;
-				for (int j = 0; j < 6; ++j)
-				{
-					volatile uint8_t index = ins->arm * 6 + j;
-					volatile uint16_t difference = abs(presentPositions[index].x - goalPositions[index].x);
-					if (difference > 2)
-					{
-						//stateChangeComplete = 0;
-					}
-				}
+            if (instruction->flag)
+            {
+                continue;
+            }
 
-				if (!stateChangeComplete)
-				{
-					continue;
-				}
+            instruction_allowed = 1;
 
-				switch (ins->state)
-				{
-					case 0: //rotate
-						//rotate(ins->arm, ins->r1);
-						break;
-					case 1: //extend
-						stretch(ins->arm, 105, 105, 105);
-						break;
-					case 2: //close
-						claw(ins->arm, 130, 170);
-						break;
-					case 3: //lift
-						wrist(ins->arm, 60);
-						break;
-					case 4: //retract
-						stretch(ins->arm, 195, 60, 60);
-						break;
-					case 5: //rotate
-						//rotate(ins->arm, ins->r2);
-						break;
-					case 6: //extend
-						stretch(ins->arm, 105, 105, 60);
-						break;
-					case 7: //put
-						wrist(ins->arm, 105);
-						break;
-					case 8: //open
-						claw(ins->arm, 150, 150);
-						break;
-					case 9: //retract
-						stretch(ins->arm, 195, 60, 60);
-						break;
-					case 10: //rotate
-						//rotate(ins->arm, 150);
-						break;
-					case 11:
-						ins->flag = 1;
-						continue;
-					default: //Something went wrong.
-						continue;
-				}
+            for (uint8_t nn = 0; nn < n; ++nn)
+            {
+                previous_instruction = &instructions[nn];
 
-				++ins->state;
-			}
-		}
+                if (previous_instruction->flag)
+                {
+                    continue;
+                }
 
-		if (flags >= inss_length)
-		{
-			break;
-		}
-	}
+                if (strcmp(instruction->from, previous_instruction->from) == 0
+                    || strcmp(instruction->from, previous_instruction->to) == 0
+                    || strcmp(instruction->to, previous_instruction->from) == 0
+                    || strcmp(instruction->to, previous_instruction->to) == 0)
+                {
+                    instruction_allowed = 0;
+                    break;
+                }
+            }
+
+            if (!instruction_allowed)
+            {
+                continue;
+            }
+
+            instruction_stateChangeComplete = 1;
+
+            for (int motor = MOTOR_B; motor <= MOTOR_F; ++motor)
+            {
+                index = instruction->arm * 6 + motor - 1;
+
+                if (abs(goalPositions[index].x - presentPositions[index].x) > 2)
+                {
+                    instruction_stateChangeComplete = 0;
+                    break;
+                }
+            }
+
+            if (!instruction_stateChangeComplete)
+            {
+                continue;
+            }
+
+            switch (instruction->state)
+            {
+                case 0: //rotate
+                    //rotate(instruction->arm, instruction->r1);
+                    break;
+                case 1: //extend
+                    stretch(instruction->arm, 105, 105, 105);
+                    break;
+                case 2: //close
+                    claw(instruction->arm, 130, 170);
+                    break;
+                case 3: //lift
+                    wrist(instruction->arm, 60);
+                    break;
+                case 4: //retract
+                    stretch(instruction->arm, 195, 60, 60);
+                    break;
+                case 5: //rotate
+                    //rotate(instruction->arm, instruction->r2);
+                    break;
+                case 6: //extend
+                    stretch(instruction->arm, 105, 105, 60);
+                    break;
+                case 7: //put
+                    wrist(instruction->arm, 105);
+                    break;
+                case 8: //open
+                    claw(instruction->arm, 150, 150);
+                    break;
+                case 9: //retract
+                    stretch(instruction->arm, 195, 60, 60);
+                    break;
+                case 10: //rotate
+                    //rotate(instruction->arm, 150);
+                    break;
+                case 11: //all state changes complete for this instruction.
+                    instruction->flag = 1;
+                    continue;
+                default: //Something went wrong.
+                    continue;
+            }
+
+            ++instruction->state;
+        }
+    }
 }
 
 void ping_task()
