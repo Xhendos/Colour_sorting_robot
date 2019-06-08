@@ -27,6 +27,52 @@
 #define GPIOC_HIGH      (*((volatile uint32_t *) 0x40011004))
 #define GPIOC_SR		(*((volatile uint32_t *) 0x40011010))
 
+typedef enum {
+	ARM_0 = 0,
+	ARM_1,
+	ARM_2,
+	ARM_3,
+	ARM_4,
+	ARM_5,
+	ARM_6,
+	ARM_7,
+} arm_t;
+
+typedef enum {
+	ARM_0_BASE = 0,
+	ARM_1_BASE = 10,
+	ARM_2_BASE = 20,
+	ARM_3_BASE = 30,
+	ARM_4_BASE = 40,
+	ARM_5_BASE = 50,
+	ARM_6_BASE = 60,
+	ARM_7_BASE = 70,
+} arm_base_t;
+
+typedef enum {
+	MOTOR_A = 1,
+	MOTOR_B,
+	MOTOR_C,
+	MOTOR_D,
+	MOTOR_E,
+	MOTOR_F,
+} motor_t;
+
+typedef enum {
+	T0 = 0,
+	T1,
+	T2,
+	T3,
+	T4,
+	T5,
+	T6,
+	T7,
+	F0,
+	F1,
+	F2,
+	F3,
+} placeholders_t;
+
 extern position_t presentPositions[48];
 extern position_t goalPositions[48];
 extern uint8_t pings[48];
@@ -42,6 +88,7 @@ extern void i2c_task();
 extern void user_task();
 extern void arm_task();
 extern void ping_task();
+extern void presentPosition_task();
 extern void position_task();
 extern void rgb_task();
 
