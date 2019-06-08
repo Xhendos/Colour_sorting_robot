@@ -55,6 +55,7 @@ void USART1_IRQ_handler(void)
 
 		switch (packet.type)
 		{
+            case AX_WRITE:
 			case AX_PING:
 				rxbytes = 6;
 				break;
@@ -113,6 +114,7 @@ void USART1_IRQ_handler(void)
 		{
 			switch (packet.type)
 			{
+                case AX_WRITE:
 				case AX_PING:
 					pings[index] = rx[4];
 					break;
@@ -181,10 +183,11 @@ void init_task()
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(uart_task, "uart", 128, NULL, 3, NULL);
-	xTaskCreate(ping_task, "ping", 128, NULL, 3, NULL);
-	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, NULL);
+	//xTaskCreate(ping_task, "ping", 128, NULL, 3, NULL);
+	//xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, NULL);
+	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
@@ -197,9 +200,9 @@ void init_task()
 
     //Notify arm task that queue is filled with instructions.
     //This should be done by the task that calculates the instructions.
-    instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
-    xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
-    xTaskNotifyGive(armHandle);
+    //instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
+    //xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
+    //xTaskNotifyGive(armHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
@@ -233,7 +236,7 @@ void uart_task()
 			}
 			else
 			{
-                if (xQueueReceive(uartSignalQueue, &signal, pdMS_TO_TICKS(10) == pdTRUE))
+                if (xQueueReceive(uartSignalQueue, &signal, portMAX_DELAY) == pdTRUE)
                 {
                     received = send = 0;
                 }
@@ -362,6 +365,79 @@ void arm_task()
             ++instruction->state;
         }
     }
+}
+
+void prepareArms_task()
+{
+    volatile static uint8_t id;
+    static ax_packet_t packet;
+    volatile static uint16_t cwAngleLimit = DEGREES_TO_UNITS(60);
+    volatile static uint16_t ccwAngleLimit = DEGREES_TO_UNITS(240);
+    volatile static uint16_t maxTorque = 0x03FF;
+    volatile static uint16_t movingSpeed = RPM_TO_UNITS(RPM);
+    volatile static uint16_t goalPosition = DEGREES_TO_UNITS(150);
+
+    for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
+    {
+        for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
+        {
+            id = arm + motor;
+            //Torque Enable.
+            packet = generateWritePacket(id, AX_TORQUE_ENABLE, 0);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Return Delay Time.
+            packet = generateWritePacket(id, AX_RETURN_DELAY_TIME, 50);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //CW Angle Limit.
+            packet = generateWritePacket(id, AX_CW_ANGLE_LIMIT, cwAngleLimit);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //CCW Angle Limit.
+            packet = generateWritePacket(id, AX_CCW_ANGLE_LIMIT, ccwAngleLimit);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Max Torque.
+            packet = generateWritePacket(id, AX_MAX_TORQUE, maxTorque);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Status Return Level.
+            //Return status packet for all instruction packets.
+            packet = generateWritePacket(id, AX_STATUS_RETURN_LEVEL, 2);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Moving Speed.
+            packet = generateWritePacket(id, AX_MOVING_SPEED, movingSpeed);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Goal Position.
+            switch (motor)
+            {
+                case MOTOR_A:
+                    goalPosition = DEGREES_TO_UNITS(150);
+                    break;
+                case MOTOR_B:
+                    goalPosition = DEGREES_TO_UNITS(195);
+                    break;
+                case MOTOR_C:
+                    goalPosition = DEGREES_TO_UNITS(60);
+                    break;
+                case MOTOR_D:
+                    goalPosition = DEGREES_TO_UNITS(60);
+                    break;
+                case MOTOR_E:
+                    goalPosition = DEGREES_TO_UNITS(150);
+                    break;
+                case MOTOR_F:
+                    goalPosition = DEGREES_TO_UNITS(150);
+                    break;
+                default:
+                    goalPosition = DEGREES_TO_UNITS(150);
+                    break;
+            }
+            packet = generateWritePacket(id, AX_GOAL_POSITION, goalPosition);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Torque Enable.
+            packet = generateWritePacket(id, AX_TORQUE_ENABLE, 1);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+        }
+    }
+
+    vTaskDelete(NULL);
 }
 
 void ping_task()
