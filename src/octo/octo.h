@@ -87,6 +87,7 @@ extern void manager_task();
 extern void init_task();
 extern void i2c_task();
 extern void user_task();
+extern void uart_task();
 extern void arm_task();
 extern void ping_task();
 extern void presentPosition_task();
