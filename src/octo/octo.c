@@ -17,6 +17,7 @@ uint8_t inProgress;
 
 QueueHandle_t uartPacketQueue;
 QueueHandle_t usartPacketQueue;
+QueueHandle_t uartSignalQueue;
 
 void USART1_IRQ_handler(void)
 {
@@ -28,6 +29,7 @@ void USART1_IRQ_handler(void)
 	volatile static uint8_t txbytes = 0;
 	volatile static uint8_t rxbytes = 0;
 	volatile static uint8_t index = 0;
+    static uint8_t signal = 0x55;
 
 	if (!inProgress)
 	{
@@ -124,6 +126,7 @@ void USART1_IRQ_handler(void)
 
 			_CR1_RXNEIE_CLEAR;
 			inProgress = 0;
+            xQueueSendFromISR(uartSignalQueue, &signal, NULL);
 		}
 	}
 }
@@ -133,12 +136,13 @@ void uart_task()
 	static ax_packet_t packet;
 	static uint8_t received = 0;
 	static uint8_t send = 0;
+    uint8_t signal;
 
 	while (1)
 	{
 		if (!received)
 		{
-			if (xQueueReceive(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdTRUE)
+			if (xQueueReceive(uartPacketQueue, &packet, portMAX_DELAY) == pdTRUE)
 			{
 				received = 1;
 			}
@@ -147,18 +151,16 @@ void uart_task()
 		{
 			if (!send)
 			{
-				if (xQueueSend(usartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdTRUE)
+				if (xQueueSend(usartPacketQueue, &packet, portMAX_DELAY) == pdTRUE)
 				{
 					send = 1;
 				}
 			}
 			else
 			{
-                if (!inProgress)
-                {
                     _CR1_TXEIE_SET;
+                    xQueueReceive(uartSignalQueue, &signal, portMAX_DELAY);
                     received = send = 0;
-                }
 			}
 		}
 	}
@@ -203,13 +205,14 @@ void init_task()
 	//Queues.
 	uartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
 	usartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
+	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
     //xTaskCreate(arm_task, "arm", 128, NULL, 2, NULL);
 	xTaskCreate(uart_task, "uart", 128, NULL, 3, NULL);
-	xTaskCreate(ping_task, "ping", 128, NULL, 3, NULL);
-	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, NULL);
+	xTaskCreate(ping_task, "ping", 128, NULL, 4, NULL);
+	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
@@ -369,7 +372,7 @@ void ping_task()
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
 			{
 				packet.id = arm + motor;
-				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
+				if (xQueueSend(uartPacketQueue, &packet, portMAX_DELAY) == pdFALSE)
                 {
                     --motor;
                 }
@@ -393,7 +396,7 @@ void presentPosition_task()
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
             {
                 packet.id = arm + motor;
-				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
+				if (xQueueSend(uartPacketQueue, &packet, portMAX_DELAY) == pdFALSE)
                 {
                     --motor;
                 }
