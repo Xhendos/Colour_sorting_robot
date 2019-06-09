@@ -85,6 +85,8 @@ extern QueueHandle_t uartSignalQueue;
 extern QueueHandle_t armInstructionQueue;
 
 extern TaskHandle_t armHandle;
+extern TaskHandle_t pingHandle;
+extern TaskHandle_t presentPositionHandle;
 
 extern void manager_task();
 extern void init_task();

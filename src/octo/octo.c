@@ -21,6 +21,8 @@ QueueHandle_t uartSignalQueue;
 QueueHandle_t armInstructionQueue;
 
 TaskHandle_t armHandle;
+TaskHandle_t pingHandle;
+TaskHandle_t presentPositionHandle;
 
 void USART1_IRQ_handler(void)
 {
@@ -172,9 +174,6 @@ void init_task()
 	memset(presentPositions, 0, sizeof(presentPositions));
 	memset(goalPositions, 0, sizeof(presentPositions));
 
-    //Task handles.
-    TaskHandle_t armHandle;
-
 	//Queues.
 	uartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
 	usartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
@@ -184,10 +183,10 @@ void init_task()
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
     //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
-	xTaskCreate(uart_task, "uart", 128, NULL, 3, NULL);
-	//xTaskCreate(ping_task, "ping", 128, NULL, 3, NULL);
-	//xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, NULL);
-	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+	xTaskCreate(ping_task, "ping", 128, NULL, 3, &pingHandle);
+	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, &presentPositionHandle);
+	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
@@ -203,6 +202,8 @@ void init_task()
     //instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
     //xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
     //xTaskNotifyGive(armHandle);
+
+    xTaskNotifyGive(pingHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
@@ -448,6 +449,8 @@ void ping_task()
 
     while (1)
 	{
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
 		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
 		{
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
@@ -459,6 +462,8 @@ void ping_task()
                 }
 			}
 		}
+
+        xTaskNotifyGive(presentPositionHandle);
 	}
 }
 
@@ -472,6 +477,8 @@ void presentPosition_task()
 
     while (1)
     {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
 		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
 		{
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
@@ -483,6 +490,8 @@ void presentPosition_task()
                 }
             }
         }
+
+        xTaskNotifyGive(pingHandle);
     }
 }
 
