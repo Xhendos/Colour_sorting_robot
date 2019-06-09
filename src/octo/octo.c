@@ -22,6 +22,7 @@ QueueHandle_t armInstructionQueue;
 
 TaskHandle_t armHandle;
 TaskHandle_t pingHandle;
+TaskHandle_t goalPositionHandle;
 TaskHandle_t presentPositionHandle;
 
 void USART1_IRQ_handler(void)
@@ -127,6 +128,10 @@ void USART1_IRQ_handler(void)
 							presentPositions[index].xa[0] = rx[5];
 							presentPositions[index].xa[1] = rx[6];
 							break;
+						case AX_GOAL_POSITION:
+							goalPositions[index].xa[0] = rx[5];
+							goalPositions[index].xa[1] = rx[6];
+							break;
 					}
 					break;
 			}
@@ -182,11 +187,12 @@ void init_task()
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
 	xTaskCreate(ping_task, "ping", 128, NULL, 3, &pingHandle);
+	xTaskCreate(goalPosition_task, "goalPosition", 128, NULL, 3, &goalPositionHandle);
 	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, &presentPositionHandle);
-	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
@@ -197,11 +203,8 @@ void init_task()
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
 
-    //Notify arm task that queue is filled with instructions.
-    //This should be done by the task that calculates the instructions.
-    //instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
-    //xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
-    //xTaskNotifyGive(armHandle);
+    instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
+    xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
 
     xTaskNotifyGive(pingHandle);
 
@@ -256,8 +259,6 @@ void arm_task()
     volatile static uint8_t instruction_stateChangeComplete;
     volatile static uint8_t index;
 
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
     while(uxQueueMessagesWaiting(armInstructionQueue))
     {
         if (xQueueReceive(armInstructionQueue, &instructions[count], pdMS_TO_TICKS(10)) == pdTRUE)
@@ -268,6 +269,8 @@ void arm_task()
 
     while (1)
     {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
         for (uint8_t n = 0; n < count; ++n)
         {
             instruction = &instructions[n];
@@ -309,7 +312,7 @@ void arm_task()
             {
                 index = instruction->arm * 6 + motor - 1;
 
-                if (abs(goalPositions[index].x - presentPositions[index].x) > 2)
+                if (abs(goalPositions[index].x - presentPositions[index].x) > 5)
                 {
                     instruction_stateChangeComplete = 0;
                     break;
@@ -365,6 +368,8 @@ void arm_task()
 
             ++instruction->state;
         }
+
+        xTaskNotifyGive(pingHandle);
     }
 }
 
@@ -463,8 +468,36 @@ void ping_task()
 			}
 		}
 
-        xTaskNotifyGive(presentPositionHandle);
+        xTaskNotifyGive(goalPositionHandle);
 	}
+}
+
+void goalPosition_task()
+{
+    static ax_packet_t packet;
+    packet.type = AX_READ;
+    packet.params_length = 2;
+    packet.params[0] = AX_GOAL_POSITION;
+    packet.params[1] = 2;
+
+    while (1)
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
+		{
+			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
+            {
+                packet.id = arm + motor;
+				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
+                {
+                    --motor;
+                }
+            }
+        }
+
+        xTaskNotifyGive(presentPositionHandle);
+    }
 }
 
 void presentPosition_task()
@@ -491,9 +524,10 @@ void presentPosition_task()
             }
         }
 
-        xTaskNotifyGive(pingHandle);
+        xTaskNotifyGive(armHandle);
     }
 }
+
 
 void rgb_task()
 {
@@ -568,7 +602,7 @@ void setSpeed(uint8_t motorId, uint16_t rpm)
 	packet.params[1] = units & 0xFF;
 	packet.params[2] = (units >> 8) & 0x03;
 	packet.params_length = 3;
-	while (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10) == pdFALSE));
+	xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
 }
 
 void setGoalPosition(uint8_t motorId, uint16_t degrees)
@@ -583,5 +617,5 @@ void setGoalPosition(uint8_t motorId, uint16_t degrees)
 	packet.params[1] = units & 0xFF;
 	packet.params[2] = (units >> 8) & 0x03;
 	packet.params_length = 3;
-	while (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10) == pdFALSE));
+	xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
 }
