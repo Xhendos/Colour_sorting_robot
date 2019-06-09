@@ -7,4 +7,9 @@ p/u tx
 c
 p/u rx
 c
-
+end
+define ee
+p/u index
+p/u goalPositions[index]
+p/u presentPositions[index]
+end
