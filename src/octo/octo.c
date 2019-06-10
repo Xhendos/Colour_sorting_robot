@@ -407,10 +407,12 @@ void prepareArms_task()
             //Return status packet for all instruction packets.
             packet = generateWritePacket(id, AX_STATUS_RETURN_LEVEL, 2);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-            //Moving Speed.
-            packet = generateWritePacket(id, AX_MOVING_SPEED, movingSpeed);
+            //Alarm LED.
+            packet = generateWritePacket(id, AX_ALARM_LED, 0);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             //Goal Position.
+            packet = generateWritePacket(id, AX_SHUTDOWN, 0);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             switch (motor)
             {
                 case MOTOR_A:
@@ -436,6 +438,9 @@ void prepareArms_task()
                     break;
             }
             packet = generateWritePacket(id, AX_GOAL_POSITION, goalPosition);
+            xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+            //Moving Speed.
+            packet = generateWritePacket(id, AX_MOVING_SPEED, movingSpeed);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             //Torque Enable.
             packet = generateWritePacket(id, AX_TORQUE_ENABLE, 1);
