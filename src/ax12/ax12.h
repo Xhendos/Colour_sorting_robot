@@ -90,5 +90,6 @@ uint8_t ax_crc(uint8_t id, uint8_t length, ax_instruction_type_t type, uint8_t p
 ax_packet_t generateWritePacket(uint8_t id, ax_register_t r, uint16_t data);
 uint16_t ax_read(uint8_t id, ax_register_t r);
 uint8_t ax_write(uint8_t id, ax_register_t r, uint16_t d);
+void ax_debug();
 
 #endif
