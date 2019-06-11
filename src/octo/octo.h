@@ -88,6 +88,7 @@ extern TaskHandle_t armHandle;
 extern TaskHandle_t pingHandle;
 extern TaskHandle_t goalPositionHandle;
 extern TaskHandle_t presentPositionHandle;
+extern TaskHandle_t movingHandle;
 
 extern void manager_task();
 extern void init_task();
@@ -98,6 +99,7 @@ extern void arm_task();
 extern void ping_task();
 extern void goalPosition_task();
 extern void presentPosition_task();
+extern void moving_task();
 extern void position_task();
 extern void rgb_task();
 extern void prepareArms_task();
