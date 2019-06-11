@@ -216,39 +216,16 @@ void init_task()
 
 void uart_task()
 {
-	static ax_packet_t packet;
-	static uint8_t received = 0;
-	static uint8_t send = 0;
+    static ax_packet_t packet;
     uint8_t signal;
 
-	while (1)
-	{
-		if (!received)
-		{
-			if (xQueueReceive(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdTRUE)
-			{
-				received = 1;
-			}
-		}
-		else
-		{
-			if (!send)
-			{
-				if (xQueueSend(usartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdTRUE)
-				{
-					send = 1;
-                    _CR1_TXEIE_SET;
-				}
-			}
-			else
-			{
-                if (xQueueReceive(uartSignalQueue, &signal, portMAX_DELAY) == pdTRUE)
-                {
-                    received = send = 0;
-                }
-			}
-		}
-	}
+    while (1)
+    {
+        xQueueReceive(uartPacketQueue, &packet, portMAX_DELAY);
+        xQueueSend(usartPacketQueue, &packet, portMAX_DELAY);
+        _CR1_TXEIE_SET;
+        xQueueReceive(uartSignalQueue, &signal, portMAX_DELAY);
+    }
 }
 
 void arm_task()
