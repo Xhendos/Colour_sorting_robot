@@ -335,7 +335,7 @@ void arm_task()
                     stretch(instruction->arm, 105, 105, 105);
                     break;
                 case 2: //close
-                    claw(instruction->arm, 130, 170);
+                    claw(instruction->arm, 160, 140);
                     break;
                 case 3: //lift
                     wrist(instruction->arm, 60);
