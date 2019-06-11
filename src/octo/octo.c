@@ -468,10 +468,7 @@ void ping_task()
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
 			{
 				packet.id = arm + motor;
-				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
-                {
-                    --motor;
-                }
+				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
 			}
 		}
 
@@ -496,10 +493,7 @@ void goalPosition_task()
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
             {
                 packet.id = arm + motor;
-				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
-                {
-                    --motor;
-                }
+				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             }
         }
 
@@ -524,10 +518,7 @@ void presentPosition_task()
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
             {
                 packet.id = arm + motor;
-				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
-                {
-                    --motor;
-                }
+				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             }
         }
 
@@ -552,10 +543,7 @@ void moving_task()
 			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
             {
                 packet.id = arm + motor;
-				if (xQueueSend(uartPacketQueue, &packet, pdMS_TO_TICKS(10)) == pdFALSE)
-                {
-                    --motor;
-                }
+				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             }
         }
 
