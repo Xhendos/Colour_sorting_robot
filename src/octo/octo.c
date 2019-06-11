@@ -240,10 +240,8 @@ void arm_task()
 
     while(uxQueueMessagesWaiting(armInstructionQueue))
     {
-        if (xQueueReceive(armInstructionQueue, &instructions[count], pdMS_TO_TICKS(10)) == pdTRUE)
-        {
-            ++count;
-        }
+        xQueueReceive(armInstructionQueue, &instructions[count], portMAX_DELAY);
+        ++count;
     }
 
     while (1)
