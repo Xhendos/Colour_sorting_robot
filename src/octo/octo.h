@@ -76,6 +76,7 @@ typedef enum {
 extern position_t presentPositions[48];
 extern position_t goalPositions[48];
 extern uint8_t pings[48];
+extern uint8_t movings[48];
 extern uint8_t dummy;
 extern uint8_t inProgress;
 

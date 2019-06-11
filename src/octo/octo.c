@@ -1,5 +1,4 @@
 #include <string.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
@@ -12,6 +11,7 @@
 position_t presentPositions[48];
 position_t goalPositions[48];
 uint8_t pings[48];
+uint8_t movings[48];
 uint8_t dummy;
 uint8_t inProgress;
 
@@ -133,6 +133,9 @@ void USART1_IRQ_handler(void)
 							goalPositions[index].xa[0] = rx[5];
 							goalPositions[index].xa[1] = rx[6];
 							break;
+                        case AX_MOVING:
+                            movings[index] = rx[5];
+                            break;
 					}
 					break;
 			}
@@ -314,7 +317,7 @@ void arm_task()
             {
                 index = instruction->arm * 6 + motor - 1;
 
-                if (abs(goalPositions[index].x - presentPositions[index].x) > 5)
+                if (movings[index])
                 {
                     instruction_stateChangeComplete = 0;
                     break;
