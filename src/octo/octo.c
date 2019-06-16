@@ -289,7 +289,7 @@ void arm_task()
             {
                 index = instruction->arm * 6 + motor - 1;
 
-                if (abs(goalPositions[index].x - presentPositions[index].x) > 5)
+                if (abs(goalPositions[index].x - presentPositions[index].x) > 10)
                 {
                     instruction_stateChangeComplete = 0;
                     break;
@@ -313,7 +313,7 @@ void arm_task()
                     claw(instruction->arm, 160, 140);
                     break;
                 case 3: //lift
-                    wrist(instruction->arm, 60);
+                    wrist(instruction->arm, 120);
                     break;
                 case 4: //retract
                     stretch(instruction->arm, 195, 60, 60);
@@ -322,7 +322,7 @@ void arm_task()
                     //rotate(instruction->arm, instruction->r2);
                     break;
                 case 6: //extend
-                    stretch(instruction->arm, 105, 105, 60);
+                    stretch(instruction->arm, 105, 105, 120);
                     break;
                 case 7: //put
                     wrist(instruction->arm, 105);
