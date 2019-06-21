@@ -578,7 +578,6 @@ void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees)
 void setGoalPosition(uint8_t motorId, uint16_t degrees)
 {
 	uint16_t units = DEGREES_TO_UNITS(degrees);
-	uint8_t index = idToIndex(motorId);
 	ax_packet_t packet = generateWritePacket(motorId, AX_GOAL_POSITION, units);
 	xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
 }

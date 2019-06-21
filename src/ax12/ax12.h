@@ -16,12 +16,12 @@ typedef enum
 	AX_PING = 1,
 	AX_READ = 2,
 	AX_WRITE = 3,
-	AX_REG_WRITE = 4,
-	AX_ACTION = 5,
-	AX_FACTORY_RESET = 6,
-	AX_REBOOT = 8,
-	AX_SYNC_WRITE = 131,
-	AX_BULK_READ = 146,
+	//AX_REG_WRITE = 4,
+	//AX_ACTION = 5,
+	//AX_FACTORY_RESET = 6,
+	//AX_REBOOT = 8,
+	//AX_SYNC_WRITE = 131,
+	//AX_BULK_READ = 146,
 } ax_instruction_type_t;
 
 typedef enum
