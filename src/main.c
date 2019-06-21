@@ -79,8 +79,9 @@ int main(void)
 	rgb_init();
 
 
-
+    volatile int count = 0;
 	while (1) {
+	    count += 1;
         test = getRGB(0);
     }
 

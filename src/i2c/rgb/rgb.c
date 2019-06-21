@@ -2,6 +2,7 @@
 #include "../i2c.h"
 
 #include <unistd.h>
+#include "stm32f103xb.h"
 
 /* addr */
 #define TCS34725_ADDRESS (0x29)     /* < I2C address */
@@ -19,22 +20,23 @@
 #define TCS34725_BDATA (0x1A) /* < Blue channel data low byte */
 
 /* rgb pins for controlling led and reading */
-#define TCS34725_SENSOR1 () /* define location */
-#define TCS34725_SENSOR2 () /* define location */
-#define TCS34725_SENSOR3 () /* define location */
-#define TCS34725_SENSOR4 () /* define location */
-#define TCS34725_SENSOR5 () /* define location */
-#define TCS34725_SENSOR6 () /* define location */
-#define TCS34725_SENSOR7 () /* define location */
-#define TCS34725_SENSOR8 () /* define location */
-#define TCS34725_SENSOR9 () /* define location */
-#define TCS34725_SENSOR10 () /* define location */
-#define TCS34725_SENSOR11 () /* define location */
-#define TCS34725_SENSOR12 () /* define location */
-
+/* GPIOx_CRL  x= A..G */
+#define TCS34725_SENSOR1_8_CONFIG (*((volatile uint32_t *) 0x40010800)) /* define location addr of sensor 1-8 */
+#define TCS34725_SENSOR1_8_VALUES (*((volatile uint32_t *) 0x40010810)) /* define location */
+#define TCS34725_SENSOR3 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR4 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR5 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR6 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR7 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR8 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR9 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR10 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR11 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR12 (*((volatile uint32_t *) ) /* define location */
+unsigned long time = 0;
 /* private functions */
 static _Bool checkDeviceID();
-
+static _Bool  initPins();
 /* Enable register */
 union EnableRegister
 {
@@ -92,12 +94,13 @@ union ControlRegister
 /*
  * initialize function for TCS34725.
  */
-unsigned long time = 0;
 void rgb_init()
 {
-    /* Check device id */
-    if(checkDeviceID());
-
+    /*initialize pins*/
+    initPins();
+    while(time < 100000)
+        time++;
+    time = 0;
         /* Enables the adc */
         /* Select enable register(0x00) */
         /* Power ON, RGBC enable, wait time disable(0x03) */
@@ -107,7 +110,7 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_ENABLE | TCS34725_COMMAND_BIT));
         i2c_send_byte(enRegister.value);
         i2c_stop_transmission();
-        while(time < 1000000)
+        while(time < 100000)
             time++;
         time = 0;
 
@@ -119,7 +122,7 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_RGBCTIME | TCS34725_COMMAND_BIT));
         i2c_send_byte(timeReg.value);
         i2c_stop_transmission();
-        while(time < 1000000)
+        while(time < 100000)
             time++;
         time = 0;
 
@@ -131,7 +134,7 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_WAITTIME | TCS34725_COMMAND_BIT));
         i2c_send_byte(waitReg.value);
         i2c_stop_transmission();
-        while(time < 1000000)
+        while(time < 100000)
             time++;
         time = 0;
 
@@ -145,6 +148,20 @@ void rgb_init()
         i2c_send_byte(cntrlReg.value);
         i2c_stop_transmission();
 }
+
+/*
+ * Function for initializing all gpio for the rgb sensors.
+ */
+static _Bool initPins()
+{
+    /* set pins 0 and 1 of A as output */
+    /* config per pin aabb where aa=cnf wich is 00 for push-pull*/
+    /* bb==mode wich is 01 for output with speed 10MHZ*/
+    TCS34725_SENSOR1_8_CONFIG = 0x00000011;
+    TCS34725_SENSOR1_8_VALUES = 0x00000002;
+    return 1;
+}
+
 /*
  * Returns the value of of each colour including clear (0-255) of the given rgb sensor.
  */
@@ -152,7 +169,13 @@ struct RGB getRGB(uint8_t position)
 {
     struct RGB tmp_RGB;
     tmp_RGB.Red = getRed(position);
+    while(time < 10000)
+        time++;
+    time = 0;
     tmp_RGB.Green = getGreen(position);
+    while(time < 10000)
+        time++;
+    time = 0;
     tmp_RGB.Blue = getBlue(position);
     return tmp_RGB;
 }
@@ -169,13 +192,17 @@ uint8_t getRed(uint8_t position)
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-
+    while(time < 1000)
+        time++;
+    time = 0;
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte red */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_RDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-
+    while(time < 1000)
+        time++;
+    time = 0;
     tmpRed = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     fRed = (float)((float)tmpRed / (float)tmpClear) * 255.0;
@@ -196,13 +223,17 @@ uint8_t getGreen(uint8_t position)
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-
+    while(time < 1000)
+        time++;
+    time = 0;
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte Green */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_GDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-
+    while(time < 1000)
+        time++;
+    time = 0;
     tmpGreen = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     fGreen = (float)((float)tmpGreen / (float)tmpClear) * 255.0;
@@ -223,13 +254,17 @@ uint8_t getBlue(uint8_t position)
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-
+    while(time < 1000)
+        time++;
+    time = 0;
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte red */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_BDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-
+    while(time < 1000)
+        time++;
+    time = 0;
     tmpBlue = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     fBlue = (float)((float)tmpBlue / (float)tmpClear) * 255.0;
