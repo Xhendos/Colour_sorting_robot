@@ -59,6 +59,15 @@ typedef enum {
 } motor_t;
 
 typedef enum {
+	MOTOR_A_INDEX = 0,
+	MOTOR_B_INDEX,
+	MOTOR_C_INDEX,
+	MOTOR_D_INDEX,
+	MOTOR_E_INDEX,
+	MOTOR_F_INDEX,
+} motor_index_t;
+
+typedef enum {
 	T0 = 0,
 	T1,
 	T2,
