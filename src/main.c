@@ -81,8 +81,23 @@ int main(void)
 
     volatile int count = 0;
 	while (1) {
-	    count += 1;
+        while(count < 10000)
+            count++;
+        count = 0;
         test = getRGB(0);
+        /* switch*/
+        while(count < 10000)
+            count++;
+        count = 0;
+        test = getRGB(1);
+        while(count < 10000)
+            count++;
+        count = 0;
+        test = getRGB(2);
+        while(count < 10000)
+            count++;
+        count = 0;
+        test = getRGB(3);
     }
 
 	return 0;					/* We should never reach this point */

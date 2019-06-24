@@ -21,22 +21,16 @@
 
 /* rgb pins for controlling led and reading */
 /* GPIOx_CRL  x= A..G */
-#define TCS34725_SENSOR1_8_CONFIG (*((volatile uint32_t *) 0x40010800)) /* define location addr of sensor 1-8 */
-#define TCS34725_SENSOR1_8_VALUES (*((volatile uint32_t *) 0x40010810)) /* define location */
-#define TCS34725_SENSOR3 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR4 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR5 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR6 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR7 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR8 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR9 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR10 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR11 (*((volatile uint32_t *) ) /* define location */
-#define TCS34725_SENSOR12 (*((volatile uint32_t *) ) /* define location */
+#define TCS34725_SENSOR1_8_CONFIG  (*((volatile uint32_t *) 0x40010800)) /*  define location addr of sensor 1-8  low input gpioA*/
+#define TCS34725_SENSOR1_8_VALUES  (*((volatile uint32_t *) 0x40010810)) /* define value addrs of sensor 1-8 */
+#define TCS34725_SENSOR9_12_CONFIG (*((volatile uint32_t *) 0x40010c04)) /* define location addr of sensor 9-12  high input gpioB*/
+#define TCS34725_SENSOR9_12_VALUES (*((volatile uint32_t *) 0x40010c10)) /* define value addrs of sensor 9-12 */
+#define SENSORCOUNT 4
 unsigned long time = 0;
 /* private functions */
 static _Bool checkDeviceID();
 static _Bool  initPins();
+static void rgb_setPin(uint32_t sensorPosition);
 /* Enable register */
 union EnableRegister
 {
@@ -98,9 +92,9 @@ void rgb_init()
 {
     /*initialize pins*/
     initPins();
-    while(time < 100000)
-        time++;
-    time = 0;
+    int i = 0;
+    for(i = 0; i < SENSORCOUNT; i++) {
+        rgb_setPin(i);
         /* Enables the adc */
         /* Select enable register(0x00) */
         /* Power ON, RGBC enable, wait time disable(0x03) */
@@ -110,9 +104,6 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_ENABLE | TCS34725_COMMAND_BIT));
         i2c_send_byte(enRegister.value);
         i2c_stop_transmission();
-        while(time < 100000)
-            time++;
-        time = 0;
 
         /* Set intergration time */
         /* Select ALS time register(0x81) */
@@ -122,9 +113,6 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_RGBCTIME | TCS34725_COMMAND_BIT));
         i2c_send_byte(timeReg.value);
         i2c_stop_transmission();
-        while(time < 100000)
-            time++;
-        time = 0;
 
         /* Set gain */
         /* Select Wait Time register(0x83) */
@@ -134,9 +122,6 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_WAITTIME | TCS34725_COMMAND_BIT));
         i2c_send_byte(waitReg.value);
         i2c_stop_transmission();
-        while(time < 100000)
-            time++;
-        time = 0;
 
         /* Select control register(0x8F) */
         /* AGAIN = 1x(0x00) */
@@ -147,6 +132,7 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_CNTRLREG | TCS34725_COMMAND_BIT));
         i2c_send_byte(cntrlReg.value);
         i2c_stop_transmission();
+    }
 }
 
 /*
@@ -155,11 +141,31 @@ void rgb_init()
 static _Bool initPins()
 {
     /* set pins 0 and 1 of A as output */
-    /* config per pin aabb where aa=cnf wich is 00 for push-pull*/
-    /* bb==mode wich is 01 for output with speed 10MHZ*/
-    TCS34725_SENSOR1_8_CONFIG = 0x00000011;
-    TCS34725_SENSOR1_8_VALUES = 0x00000002;
+    /* 0x1 == 0001 push pull 10mhz */
+    /* Set A0 to A7 sensor 1 to 8 */
+    TCS34725_SENSOR1_8_CONFIG = 0x11111111;
+    /* Set B12 to B15*/
+    TCS34725_SENSOR9_12_CONFIG = 0x11110000;
     return 1;
+}
+
+/*
+ * Used for setting rgb sensor pin.
+ */
+static void rgb_setPin(uint32_t sensorPosition)
+{
+    /* Reset pins */
+    TCS34725_SENSOR1_8_VALUES = 0x00ff0000;
+    TCS34725_SENSOR9_12_VALUES = 0xf0000000;
+    if(sensorPosition >= 0 &&  sensorPosition < 8)
+    {
+        TCS34725_SENSOR1_8_VALUES = (0x00000001 << sensorPosition);
+    }
+    else
+    {
+        TCS34725_SENSOR9_12_VALUES = (0x00001000 << (sensorPosition - 8));
+    }
+
 }
 
 /*
@@ -167,6 +173,10 @@ static _Bool initPins()
  */
 struct RGB getRGB(uint8_t position)
 {
+    rgb_setPin(position);
+    while(time < 10000)
+        time++;
+    time = 0;
     struct RGB tmp_RGB;
     tmp_RGB.Red = getRed(position);
     while(time < 10000)
@@ -192,17 +202,11 @@ uint8_t getRed(uint8_t position)
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-    while(time < 1000)
-        time++;
-    time = 0;
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte red */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_RDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-    while(time < 1000)
-        time++;
-    time = 0;
     tmpRed = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     fRed = (float)((float)tmpRed / (float)tmpClear) * 255.0;
@@ -223,17 +227,11 @@ uint8_t getGreen(uint8_t position)
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-    while(time < 1000)
-        time++;
-    time = 0;
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte Green */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_GDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-    while(time < 1000)
-        time++;
-    time = 0;
     tmpGreen = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     fGreen = (float)((float)tmpGreen / (float)tmpClear) * 255.0;
@@ -254,17 +252,11 @@ uint8_t getBlue(uint8_t position)
     /* read low Byte clear */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_CDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-    while(time < 1000)
-        time++;
-    time = 0;
     tmpClear = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     /* read low Byte red */
     i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_BDATA | TCS34725_COMMAND_BIT);
     i2c_stop_transmission();
-    while(time < 1000)
-        time++;
-    time = 0;
     tmpBlue = i2c_read_2_bytes(TCS34725_ADDRESS);
 
     fBlue = (float)((float)tmpBlue / (float)tmpClear) * 255.0;

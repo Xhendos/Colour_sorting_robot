@@ -4,6 +4,7 @@
 /* GPIOB */                                                    
 #define _GPIOB_CRL      (*((volatile unsigned long *) 0x40010C00))      /* Port configuration register low */
 
+unsigned long timei2c = 0;
 /* i2c_init() assumes that PB6 and PB7 are configured to be an alternate function pin */
 void i2c_init()
 {
@@ -40,9 +41,14 @@ void i2c_init()
 
 uint8_t i2c_begin_transmission(uint8_t address, uint8_t byte)
 {
+    while(timei2c < 100000)
+        timei2c++;
+    timei2c = 0;
 	_I2C_CR1 |= (1 << 8);		/* Generate a START condition by pulling the I2C data bus logic LOW */
 	while(!(_I2C_SR1 & 0x1));	/* Wait untill the START condition has been generated */
-	
+    while(timei2c < 120000)
+        timei2c++;
+    timei2c = 0;
 								/* Transmit slave address (7 bits) and read (1) or write (0) bit */
 	_I2C_DR = (address << 1) | 0;	
 	while(!(_I2C_SR1 & 0x2));	/* Wait untill the slave address has been send */
@@ -50,8 +56,11 @@ uint8_t i2c_begin_transmission(uint8_t address, uint8_t byte)
 	_I2C_SR2;					/* Dummy read to clear the _I2C_SR1 ADDR status bit */
 
 	_I2C_DR = byte;				/* Transmit the first byte */
-	while(!(_I2C_SR1 & 0x04));	/* Wait untill the byte has been transfered */	
-	
+	while(!(_I2C_SR1 & 0x04));	/* Wait untill the byte has been transfered */
+
+	while(timei2c < 10000)
+        timei2c++;
+    timei2c = 0;
 	return I2C_OK;
 }
 
