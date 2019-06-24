@@ -9,9 +9,8 @@
 #include "i2c.h"
 #include "stm32f103xb.h"
 
-position_t presentPositions[48];
-position_t goalPositions[48];
 uint8_t pings[48];
+uint8_t movings[48];
 uint8_t dummy;
 uint8_t inProgress;
 
@@ -21,9 +20,6 @@ QueueHandle_t uartSignalQueue;
 QueueHandle_t armInstructionQueue;
 
 TaskHandle_t armHandle;
-TaskHandle_t pingHandle;
-TaskHandle_t goalPositionHandle;
-TaskHandle_t presentPositionHandle;
 TaskHandle_t movingHandle;
 
 void USART1_IRQ_handler(void)
@@ -125,15 +121,10 @@ void USART1_IRQ_handler(void)
 				case AX_READ:
 					switch (packet.params[0])
 					{
-						case AX_PRESENT_POSITION:
-							presentPositions[index].xa[0] = rx[5];
-							presentPositions[index].xa[1] = rx[6];
-							break;
-						case AX_GOAL_POSITION:
-							goalPositions[index].xa[0] = rx[5];
-							goalPositions[index].xa[1] = rx[6];
-							break;
+                        case AX_MOVING:
+                            movings[index] = rx[5];
 					}
+					pings[index] = rx[4];
 					break;
 			}
 
@@ -177,8 +168,6 @@ void init_task()
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
-	memset(presentPositions, 0, sizeof(presentPositions));
-	memset(goalPositions, 0, sizeof(presentPositions));
 
 	//Queues.
 	uartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
@@ -190,9 +179,6 @@ void init_task()
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
     xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
-	xTaskCreate(ping_task, "ping", 128, NULL, 3, &pingHandle);
-	xTaskCreate(goalPosition_task, "goalPosition", 128, NULL, 3, &goalPositionHandle);
-	xTaskCreate(presentPosition_task, "presentPosition", 128, NULL, 3, &presentPositionHandle);
 	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
 	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
@@ -208,7 +194,7 @@ void init_task()
     instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
     xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
 
-    xTaskNotifyGive(pingHandle);
+    xTaskNotifyGive(movingHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
@@ -285,11 +271,11 @@ void arm_task()
 
             instruction_stateChangeComplete = 1;
 
-            for (int motor = MOTOR_B; motor <= MOTOR_F; ++motor)
+            for (int motor = MOTOR_A; motor <= MOTOR_F; ++motor)
             {
                 index = instruction->arm * 6 + motor - 1;
 
-                if (abs(goalPositions[index].x - presentPositions[index].x) > 10)
+                if (movings[index])
                 {
                     instruction_stateChangeComplete = 0;
                     break;
@@ -304,37 +290,37 @@ void arm_task()
             switch (instruction->state)
             {
                 case 0: //rotate
-                    //rotate(instruction->arm, instruction->r1);
+                    rotate(instruction->arm, instruction->r1);
                     break;
                 case 1: //extend
-                    stretch(instruction->arm, 105, 105, 105);
+                    stretch(instruction->arm, 95, 115, 110);
                     break;
                 case 2: //close
                     claw(instruction->arm, 160, 140);
                     break;
                 case 3: //lift
-                    wrist(instruction->arm, 120);
+                    wrist(instruction->arm, 150);
                     break;
                 case 4: //retract
                     stretch(instruction->arm, 195, 60, 60);
                     break;
                 case 5: //rotate
-                    //rotate(instruction->arm, instruction->r2);
+                    rotate(instruction->arm, instruction->r2);
                     break;
                 case 6: //extend
-                    stretch(instruction->arm, 105, 105, 120);
+                    stretch(instruction->arm, 105, 105, 150);
                     break;
                 case 7: //put
-                    wrist(instruction->arm, 105);
+                    wrist(instruction->arm, 110);
                     break;
                 case 8: //open
-                    claw(instruction->arm, 150, 150);
+                    claw(instruction->arm, 140, 160);
                     break;
                 case 9: //retract
                     stretch(instruction->arm, 195, 60, 60);
                     break;
                 case 10: //rotate
-                    //rotate(instruction->arm, 150);
+                    rotate(instruction->arm, 150);
                     break;
                 case 11: //all state changes complete for this instruction.
                     instruction->flag = 1;
@@ -346,7 +332,7 @@ void arm_task()
             ++instruction->state;
         }
 
-        xTaskNotifyGive(pingHandle);
+        xTaskNotifyGive(movingHandle);
     }
 }
 
@@ -360,9 +346,9 @@ void prepareArms_task()
     volatile static uint16_t movingSpeed = RPM_TO_UNITS(RPM);
     volatile static uint16_t goalPosition = DEGREES_TO_UNITS(150);
 
-    for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
+    for (uint8_t arm = ARM_0_BASE; arm <= ARM_7_BASE; arm += 10)
     {
-        for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
+        for (uint8_t motor = MOTOR_A; motor <= MOTOR_F; ++motor)
         {
             id = arm + motor;
             //Torque Enable.
@@ -408,13 +394,10 @@ void prepareArms_task()
                     goalPosition = DEGREES_TO_UNITS(60);
                     break;
                 case MOTOR_E:
-                    goalPosition = DEGREES_TO_UNITS(150);
+                    goalPosition = DEGREES_TO_UNITS(140);
                     break;
                 case MOTOR_F:
-                    goalPosition = DEGREES_TO_UNITS(150);
-                    break;
-                default:
-                    goalPosition = DEGREES_TO_UNITS(150);
+                    goalPosition = DEGREES_TO_UNITS(160);
                     break;
             }
             packet = generateWritePacket(id, AX_GOAL_POSITION, goalPosition);
@@ -426,79 +409,6 @@ void prepareArms_task()
     }
 
     vTaskDelete(NULL);
-}
-
-void ping_task()
-{
-	static ax_packet_t packet;
-    packet.type = AX_PING;
-    packet.params_length = 0;
-
-    while (1)
-	{
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
-		{
-			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
-			{
-				packet.id = arm + motor;
-				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-			}
-		}
-
-        xTaskNotifyGive(goalPositionHandle);
-	}
-}
-
-void goalPosition_task()
-{
-    static ax_packet_t packet;
-    packet.type = AX_READ;
-    packet.params_length = 2;
-    packet.params[0] = AX_GOAL_POSITION;
-    packet.params[1] = 2;
-
-    while (1)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
-		{
-			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
-            {
-                packet.id = arm + motor;
-				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-            }
-        }
-
-        xTaskNotifyGive(presentPositionHandle);
-    }
-}
-
-void presentPosition_task()
-{
-    static ax_packet_t packet;
-    packet.type = AX_READ;
-    packet.params_length = 2;
-    packet.params[0] = AX_PRESENT_POSITION;
-    packet.params[1] = 2;
-
-    while (1)
-    {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
-		{
-			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
-            {
-                packet.id = arm + motor;
-				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-            }
-        }
-
-        xTaskNotifyGive(movingHandle);
-    }
 }
 
 void moving_task()
@@ -513,9 +423,9 @@ void moving_task()
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-		for (uint8_t arm = ARM_4_BASE; arm <= ARM_4_BASE; arm += 10)
+		for (uint8_t arm = ARM_0_BASE; arm <= ARM_7_BASE; arm += 10)
 		{
-			for (uint8_t motor = MOTOR_B; motor <= MOTOR_F; ++motor)
+			for (uint8_t motor = MOTOR_A; motor <= MOTOR_F; ++motor)
             {
                 packet.id = arm + motor;
 				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
