@@ -23,6 +23,43 @@
 /* GPIOB */
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
+#define _GPIOB_ODR		(*((volatile unsigned long *) 0x40010C0C))		/* Output data register */
+#define _GPIOB_IDR		(*((volatile unsigned long *) 0x40010C08))		/* Input data register */
+
+/* Altnerative function I/O pins */
+#define _AFIO_EXTICR1	(*((volatile unsigned long *) 0x40010008))		/* External interrupt configuration 1 */
+
+/* External interrupt/event controller */
+#define _EXTI_IMR		(*((volatile unsigned long *) 0x40010400))		/* Interrupt mask register */
+#define _EXTI_EMR		(*((volatile unsigned long *) 0x40010404))		/* Event mask register */
+#define _EXTI_RTSR		(*((volatile unsigned long *) 0x40010408))		/* Rising trigger selection register */
+#define _EXTI_FTSR		(*((volatile unsigned long *) 0x4001040C))		/* Falling trigger selection register */
+#define _EXTI_SWIER		(*((volatile unsigned long *) 0x40010410))		/* Software interrupt event register */
+#define _EXTI_PR		(*((volatile unsigned long *) 0x40010414))		/* Pending register */
+
+void EXTI0_IRQ_handler(void)
+{
+	volatile static int i = 0;
+	i++;
+	if(_GPIOB_ODR & 0x02)
+	{
+		_GPIOB_BSRR |= (1 << 17);
+		_GPIOB_BSRR |= (1 << 5);
+		goto exit;
+	}
+	if(_GPIOB_ODR & 0x20)
+	{
+		_GPIOB_BSRR |= (1 << 1);
+		_GPIOB_BSRR |= (1 << 21);
+		goto exit;
+	}
+
+	_GPIOB_BSRR |= ~(1 << 5);
+	
+
+exit:
+	_EXTI_PR = 0x01;		
+}
 
 int main(void)
 {
@@ -55,9 +92,6 @@ int main(void)
 	_GPIOB_CRL |= 0x33000000;	/* PB6 and PB7 are ouput (this MUST be the case BEFORE setting the alternative function */
 	_GPIOB_CRL |= 0xCC000000;	/* PB6 and PB7 are alternative function */		
 
-	_GPIOB_CRL |= 0x01;			/* PB0 is an output pin */
-	_GPIOB_CRL |= 0x04;			/* PB0 is an general purpose open drain pin */
-
 	_GPIOA_CRH = 0;
 	_GPIOA_CRH |= 0x30;			/* PA9 is an output pin */
 	_GPIOA_CRH &= ~(0x300);		/* PA10 is an input pin */
@@ -69,31 +103,34 @@ int main(void)
 
 	_RCC_APB2RSTR |= (1 << 14);	/* Reset the USART1 module */
 	_RCC_APB2RSTR &= ~(1 << 14);/* Stop resetting the USART1 module */
+	
+	
+	//i2c_init();					/* Initialise the I2C1 module */
+	//uart_init();				/* Initialise the USART1 module */
 
-	i2c_init();					/* Initialise the I2C1 module */
-	uart_init();				/* Initialise the USART1 module */
+	_GPIOB_CRL |= 0x200024;			/* PB0 is an input pin. PB1 and PB3 are output push/pull */			
+	_AFIO_EXTICR1 |= 0x01;	
 
+	_EXTI_IMR |= 0x01;
+	_EXTI_FTSR |= 0x01;
+	
+/*	
+	NVIC_SetPriority(6, 0x03);
+	NVIC_EnableIRQ(6);		
+*/
 	while(1)
 	{
-		//uart_send_byte(0xAA);
-		//volatile uint8_t result = uart_receive_byte();
-		_GPIOB_BSRR |= 1; 
-
-		uart_send_byte(0xFF);
-		uart_send_byte(0xFF);
-		uart_send_byte(0x3D);	/* 61 in decimal should be the identity */
-		uart_send_byte(0x02);	/* Length for a ping packet is 2 */
-		uart_send_byte(0x01);	/* Ping has the instruction 0x01 */
-		uart_send_byte(0xBF);	/* The checksum should be added on this line */
-		
-		_GPIOB_BSRR |= (1 << 16);
-		
-		volatile uint8_t result1 = uart_receive_byte();
-		volatile uint8_t result2 = uart_receive_byte();
-		volatile uint8_t result3 = uart_receive_byte();
-		volatile uint8_t result4 = uart_receive_byte();	
-		volatile uint8_t result5 = uart_receive_byte();
-		volatile uint8_t result6 = uart_receive_byte();
+		volatile uint8_t data = _GPIOB_IDR & 0x01;
+				
+		if(data)
+		{
+			_GPIOB_BSRR |= (1 << 1);
+			_GPIOB_BSRR |= (1 << 21);
+		} else
+		{
+			_GPIOB_BSRR |= (1 << 17);
+			_GPIOB_BSRR |= (1 << 5);
+		}		
 	}
 	
 	return 0;					/* We should never reach this point */
