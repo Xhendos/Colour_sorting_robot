@@ -174,16 +174,16 @@ static void rgb_setPin(uint32_t sensorPosition)
 struct RGB getRGB(uint8_t position)
 {
     rgb_setPin(position);
-    while(time < 10000)
+    while(time < 10)
         time++;
     time = 0;
     struct RGB tmp_RGB;
     tmp_RGB.Red = getRed(position);
-    while(time < 10000)
+    while(time < 10)
         time++;
     time = 0;
     tmp_RGB.Green = getGreen(position);
-    while(time < 10000)
+    while(time < 10)
         time++;
     time = 0;
     tmp_RGB.Blue = getBlue(position);
