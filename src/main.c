@@ -25,6 +25,49 @@
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
 
+/* I2C */
+#define _I2C1_CR2		(*((volatile unsigned long *) 0x40005404))		/* Control register 2 */
+#define _I2C1_SR		(*((volatile unsigned long *) 0x40005414))		/* Status register 1 */
+
+void I2C1_EV_IRQ_handler(void)
+{
+	if(_I2C1_SR & 0x01)	/* SB */
+	{
+		
+	}
+
+	if(_I2C1_SR & 0x02)	/* ADDR */
+	{
+
+	}
+
+	if(_I2C1_SR & 0x08)	/* ADD10*/
+	{
+
+	}	
+
+	if(_I2C1_SR & 0x10)	/* STOPF */
+	{
+
+	}
+
+	if(_I2C1_SR & 0x04)	/* BTF */
+	{
+
+	}
+
+	if(_I2C1_SR & 0x80)	/* TxE */
+	{
+		
+	}
+
+	if(_I2C1_SR & 0x40)	/* RxNE */
+	{
+
+	}
+}
+
+
 struct RGB test;
 
 int main(void)
@@ -76,10 +119,13 @@ int main(void)
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
 
+	_I2C1_CR2 |= 0x200;
+
+	NVIC_SetPriority(I2C1_EV_IRQn, 1);	
+	NVIC_EnableIRQ(I2C1_EV_IRQn);
+
+    	volatile int count = 0;
 	rgb_init();
-
-
-    volatile int count = 0;
 	while (1) {
         while(count < 10)
             count++;
