@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" type="text/css" href="style.css">
+		<script
+		src="https://code.jquery.com/jquery-3.4.0.slim.min.js"
+		integrity="sha256-ZaXnYkHGqIhqTbJ6MB4l9Frs/r7U4jlx7ir8PJYBqbI="
+		crossorigin="anonymous">
+		</script>
+		<script>
+			var colours = ["red", "green", "blue", "white"];
+			var temps = ["#t1", "#t2", "#t3", "#t4", "#t5", "#t6", "#t7", "#t8"];
+			var finals = ["#f1", "#f2", "#f3", "#f4"];
+
+			var index;
+			var instructions;
+
+			function reset() {
+				index = 0;
+				instructions = [];
+				temps.forEach(function(temp) {
+					colours.forEach(function(colour) {
+						$(temp).removeClass(colour);
+					});
+				});
+				finals.forEach(function(final) {
+					colours.forEach(function(colour) {
+						$(final).removeClass(colour);
+						$(final).removeClass("final-" + colour);
+					});
+				});
+				$("#input").hide();
+			}
+
+			$(window).on("load", function() {
+				//Draw graph on canvas.
+				var c = document.getElementById("canvas");
+				var ct = c.getContext("2d");
+				ct.lineWidth = 6;
+				ct.beginPath();
+				ct.moveTo(50, 50);
+				ct.lineTo(450, 50);
+				ct.lineTo(450, 450);
+				ct.lineTo(50, 450);
+				ct.lineTo(50, 50);
+				ct.moveTo(250, 50);
+				ct.lineTo(450, 250);
+				ct.lineTo(250, 450);
+				ct.lineTo(50, 250);
+				ct.lineTo(250, 50);
+				ct.moveTo(50, 50);
+				ct.lineTo(150, 150);
+				ct.moveTo(450, 50);
+				ct.lineTo(350, 150);
+				ct.moveTo(450, 450);
+				ct.lineTo(350, 350);
+				ct.moveTo(50, 450);
+				ct.lineTo(150, 350);
+				ct.stroke();
+
+				$("#reset").on("click", function() {
+					reset();
+				});
+
+				$("#next").on("click", function() {
+					if (index == instructions.length) return;
+					console.log("[" + index + "] " + instructions[index]);
+					var from = "#" + instructions[index].substring(0, 2);
+					var to = "#" + instructions[index].substring(2, 4);
+					colours.forEach(function(colour) {
+						if ($(from).hasClass(colour)) {
+							$(from).removeClass(colour);
+							$(to).addClass(colour);
+						}
+					});
+					++index;
+				});
+
+				$("#previous").on("click", function() {
+					if (index == 0) return;
+					console.log("[" + --index + "] " + instructions[index]);
+					var from = "#" + instructions[index].substring(0, 2);
+					var to = "#" + instructions[index].substring(2, 4);
+					colours.forEach(function(colour) {
+						if ($(to).hasClass(colour)) {
+							$(to).removeClass(colour);
+							$(from).addClass(colour);
+						}
+					});
+				});
+
+				$("#1").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t7").addClass("red");
+					$("#t5").addClass("green");
+					$("#t2").addClass("blue");
+					$("#t4").addClass("white");
+					instructions = ["t7t8", "t8f1", "t4t3",
+									"t5t4", "t4f2", "t3t4",
+									"t4t5", "t5t6", "t6f4",
+									"t2t3", "t3t4", "t4f3"];
+				});
+
+				$("#2").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t8").addClass("green");
+					$("#t1").addClass("blue");
+					$("#t2").addClass("white");
+					$("#t3").addClass("red");
+					instructions = ["t8f1", "t1t8", "t8f4",
+									"f4t6", "t6f3", "t2t1",
+									"t1t8", "t8f4", "f1t2",
+									"t2f2", "t3t2", "t2f1"];
+				});
+
+				$("#3").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-blue");
+					$("#f2").addClass("final-red");
+					$("#f3").addClass("final-white");
+					$("#f4").addClass("final-green");
+
+					$("#t2").addClass("white");
+					$("#t4").addClass("green");
+					$("#t6").addClass("blue");
+					$("#t8").addClass("red");
+					instructions = ["t2f2", "t4f3", "t6f4",
+									"t8f1", "f2t4", "f3t6",
+									"f4t8", "f1t2", "t4f3",
+									"t6f4", "t8f1", "t2f2"];
+				});
+
+				$("#4").on("click", function() {
+					reset();
+
+					$("#f1").addClass("final-red");
+					$("#f2").addClass("final-green");
+					$("#f3").addClass("final-blue");
+					$("#f4").addClass("final-white");
+
+					$("#t5").addClass("red");
+					$("#t7").addClass("green");
+					$("#t1").addClass("blue");
+					$("#t3").addClass("white");
+					instructions = [];
+					$("#input").toggle();
+				});
+
+				$("#graph").on("click", function() {
+					if ($("#overlay .placeholder").hasClass("node")) {
+						$("#overlay .placeholder").removeClass("node")
+					} else {
+						$("#overlay .placeholder").addClass("node")
+					}
+					if ($("#board .placeholder").hasClass("color-white")) {
+						$("#board .placeholder").removeClass("color-white")
+					} else {
+						$("#board .placeholder").addClass("color-white")
+					}
+					$(".arm").toggle();
+					$("#canvas").toggle();
+				});
+
+				$("#input").on("input", function() {
+					instructions = $("#input").val().split(" ");
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<div id="wrapper">
+			<div id="background"></div>
+			<canvas id="canvas" width="500" height="500" style="display: none;"></canvas>
+			<table id="overlay">
+				<thead></thead>
+				<tbody>
+					<tr>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+					</tr>
+					<tr>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+					</tr>
+					<tr>
+						<td><div class="placeholder"></div></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td><div class="placeholder"></div></td>
+					</tr>
+					<tr>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+					</tr>
+					<tr>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+						<td><div class="arm"></div></td>
+						<td><div class="placeholder"></div></td>
+					</tr>
+				</tbody>
+			</table>
+			<table id="board">
+				<thead></thead>
+				<tbody>
+					<tr>
+						<td><div id="t7" class="placeholder">T7</div></td>
+						<td><div id="r6" class="arm">R6</div></td>
+						<td><div id="t6" class="placeholder">T6</div></td>
+						<td><div id="r5" class="arm">R5</div></td>
+						<td><div id="t5" class="placeholder">T5</div></td>
+					</tr>
+					<tr>
+						<td><div id="r7" class="arm">R7</div></td>
+						<td><div id="f4" class="placeholder">F4</div></td>
+						<td></td>
+						<td><div id="f3" class="placeholder">F3</div></td>
+						<td><div id="r4" class="arm">R4</div></td>
+					</tr>
+					<tr>
+						<td><div id="t8" class="placeholder">T8</div></td>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td><div id="t4" class="placeholder">T4</div></td>
+					</tr>
+					<tr>
+						<td><div id="r8" class="arm">R8</div></td>
+						<td><div id="f1" class="placeholder">F1</div></td>
+						<td></td>
+						<td><div id="f2" class="placeholder">F2</div></td>
+						<td><div id="r3" class="arm">R3</div></td>
+					</tr>
+					<tr>
+						<td><div id="t1" class="placeholder">T1</div></td>
+						<td><div id="r1" class="arm">R1</div></td>
+						<td><div id="t2" class="placeholder">T2</div></td>
+						<td><div id="r2" class="arm">R2</div></td>
+						<td><div id="t3" class="placeholder">T3</div></td>
+					</tr>
+				</tbody>
+			</table><!--
+			--><div id="buttons">
+				<button id="reset">Reset</button>
+				<button id="next">Next</button>
+				<button id="previous">Previous</button>
+				<button id="1">1</button>
+				<button id="2">2</button>
+				<button id="3">3</button>
+				<button id="4">4</button>
+				<button id="graph">Graph</button>
+			</div>
+			<textarea id="input" style="display: none;" placeholder="t1t8 t8f4 f4t6 t6f3..."></textarea>
+		</div>
+	</body>
+</html>

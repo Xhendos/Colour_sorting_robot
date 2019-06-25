@@ -124,11 +124,26 @@ int main(void)
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);	
 	NVIC_EnableIRQ(I2C1_EV_IRQn);
 
-	
+    	volatile int count = 0;
 	rgb_init();
-
 	while (1) {
+        while(count < 10)
+            count++;
+        count = 0;
         test = getRGB(0);
+        /* switch*/
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(1);
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(2);
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(3);
     }
 
 	return 0;					/* We should never reach this point */
