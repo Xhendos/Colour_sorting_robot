@@ -95,6 +95,8 @@ void rgb_init()
     int i = 0;
     for(i = 0; i < SENSORCOUNT; i++) {
         rgb_setPin(i);
+        if(checkDeviceID())
+        {
         /* Enables the adc */
         /* Select enable register(0x00) */
         /* Power ON, RGBC enable, wait time disable(0x03) */
@@ -104,6 +106,9 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_ENABLE | TCS34725_COMMAND_BIT));
         i2c_send_byte(enRegister.value);
         i2c_stop_transmission();
+        while(time < 1000)
+            time++;
+        time = 0;
 
         /* Set intergration time */
         /* Select ALS time register(0x81) */
@@ -113,6 +118,9 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_RGBCTIME | TCS34725_COMMAND_BIT));
         i2c_send_byte(timeReg.value);
         i2c_stop_transmission();
+        while(time < 1000)
+            time++;
+        time = 0;
 
         /* Set gain */
         /* Select Wait Time register(0x83) */
@@ -122,6 +130,9 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_WAITTIME | TCS34725_COMMAND_BIT));
         i2c_send_byte(waitReg.value);
         i2c_stop_transmission();
+        while(time < 1000)
+            time++;
+        time = 0;
 
         /* Select control register(0x8F) */
         /* AGAIN = 1x(0x00) */
@@ -132,6 +143,14 @@ void rgb_init()
         i2c_begin_transmission(TCS34725_ADDRESS, (TCS34725_CNTRLREG | TCS34725_COMMAND_BIT));
         i2c_send_byte(cntrlReg.value);
         i2c_stop_transmission();
+        while(time < 1000)
+            time++;
+        time = 0;
+        }
+        else
+        {
+            TCS34725_SENSOR1_8_VALUES = 0x00ff0000;
+        }
     }
 }
 
