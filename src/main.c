@@ -68,6 +68,8 @@ void I2C1_EV_IRQ_handler(void)
 }
 
 
+struct RGB test;
+
 int main(void)
 {
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
@@ -122,15 +124,12 @@ int main(void)
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);	
 	NVIC_EnableIRQ(I2C1_EV_IRQn);
 
-	rgbInit();
+	
+	rgb_init();
 
-	while(1)
-	{
-		i2c_begin_transmission(0x29, 0x12 | TCS34725_COMMAND_BIT);
-		i2c_stop_transmission();		
-		
-		volatile uint8_t ret = i2c_read_byte(0x29);
-	}
+	while (1) {
+        test = getRGB(0);
+    }
 
 	return 0;					/* We should never reach this point */
 }
