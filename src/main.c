@@ -4,37 +4,101 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#define GPIOC_CLK       (*((volatile uint32_t *) 0x40021018))
-#define GPIOC_HIGH      (*((volatile uint32_t *) 0x40011004))
-#define GPIOC_SR        (*((volatile uint32_t *) 0x40011010))
+#include "i2c/i2c.h"
+#include "uart/uart.h"
+#include "i2c/rgb/rgb.h"
 
-int i = 0;
+#define _RCC_CR			(*((volatile unsigned long *) 0x40021000))		/* Clock control register */
+#define _RCC_CFGR		(*((volatile unsigned long *) 0x40021004))		/* Clock configuration register */
 
-static void led_task(void *args)
-{
-    while(1)
-    {
-        i += 1;
-        GPIOC_SR = (1 << 13);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        GPIOC_SR = (1 << 29);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
+#define	_RCC_APB2ENR	(*((volatile unsigned long *) 0x40021018))		/* Peripheral clock enable register */
+#define _RCC_APB1ENR	(*((volatile unsigned long *) 0x4002101C))		/* Peripheral clock enable register */
+#define _RCC_APB1RSTR	(*((volatile unsigned long *) 0x40021010))		/* Peripheral reset register */
+#define _RCC_APB2RSTR	(*((volatile unsigned long *) 0x4002100C))		/* APB2 peripheral reset register */
+
+
+/* GPIOA */
+#define _GPIOA_CRH		(*((volatile unsigned long *) 0x40010804))		/* Port configuration register high */
+#define	_GPIOA_BSRR		(*((volatile unsigned long *) 0x40010810))		/* set/reset register */
+
+/* GPIOB */
+#define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
+#define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
+
+struct RGB test;
 
 int main(void)
 {
+	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
+	_RCC_CFGR &= ~(0x482);		/* Do NOT divide the HCLK (which is the ABP clock) and use the internal 8 MHz oscillator as clock source */
 
-    GPIOC_CLK |= (1 << 4);
+	_RCC_APB2ENR |= 0x1D;		/* Enable alternative function and GPIO port A, B, and C */
+	_RCC_APB2ENR |= (1 << 14);	/* Enable the USART1 module */
+	_RCC_APB1ENR |= (1 << 21);	/* Enable the I2C1 module */
 
-    GPIOC_HIGH &= ~(3 << 20);
-    GPIOC_HIGH |= (1 << 20);
-    GPIOC_HIGH &= ~(3 << 22);
-    GPIOC_HIGH |= (0 << 22);
+	/************************************************************
+	*  Pin number  *	Pin name   	*	Alternative function	*
+	*************************************************************
+	*      42      *     PB6		*			I2C1_SCL		*
+	*************************************************************
+	*      43	   *	 PB7		*			I2C_SDA			*
+	*************************************************************
+	*	   29	   *	 PA8		*			USART1_CK		*
+	*************************************************************
+	*	   30	   *	 PA9		*			USART1_TX		*
+	*************************************************************
+	*	   31	   *	 PA10		*			USART1_RX		*
+	*************************************************************
+	*	   32	   *	 PA11		*			USART1_CTS		*
+	*************************************************************
+	*	   33	   *	 PA12		*			USART1_RTS		*
+	*************************************************************/
 
-    xTaskCreate(led_task, "LED_blink_1", 128, NULL, configMAX_PRIORITIES-1, NULL);
+	_GPIOB_CRL = 0;				
+	_GPIOB_CRL |= 0x33000000;	/* PB6 and PB7 are ouput (this MUST be the case BEFORE setting the alternative function */
+	_GPIOB_CRL |= 0xCC000000;	/* PB6 and PB7 are alternative function */		
 
-    vTaskStartScheduler();    
-    
-    return 0;
+	_GPIOB_CRL |= 0x01;			/* PB0 is an output pin */
+	_GPIOB_CRL |= 0x04;			/* PB0 is an general purpose open drain pin */
+
+	_GPIOA_CRH = 0;
+	_GPIOA_CRH |= 0x30;			/* PA9 is an output pin */
+	_GPIOA_CRH &= ~(0x300);		/* PA10 is an input pin */
+	_GPIOA_CRH |= 0x80;			/* PA9 is an alternative function push pull pin */
+	_GPIOA_CRH |= 0x400;		/* PA10 is an floating pin */
+
+	_RCC_APB1RSTR |= ( 1 << 21);	/* Reset the I2C1 module */
+	_RCC_APB1RSTR &= ~(1 << 21);	/* Stop resetting the I2C1 module */	
+
+	_RCC_APB2RSTR |= (1 << 14);	/* Reset the USART1 module */
+	_RCC_APB2RSTR &= ~(1 << 14);/* Stop resetting the USART1 module */
+
+	i2c_init();					/* Initialise the I2C1 module */
+	uart_init();				/* Initialise the USART1 module */
+
+	rgb_init();
+
+
+    volatile int count = 0;
+	while (1) {
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(0);
+        /* switch*/
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(1);
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(2);
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(3);
+    }
+
+	return 0;					/* We should never reach this point */
 }
