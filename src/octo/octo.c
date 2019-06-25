@@ -191,7 +191,7 @@ void init_task()
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
 
-    instruction_t instruction = {0, ARM_4, 240, 60, 0, "t5", "t6"};
+    instruction_t instruction = {0, ARM_6, 240, 60, 0, "t5", "t6"};
     xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
 
     xTaskNotifyGive(movingHandle);
