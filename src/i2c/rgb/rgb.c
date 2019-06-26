@@ -1,23 +1,27 @@
+#include <unistd.h>
+#include "stm32f103xb.h"
+
 #include "rgb.h"
 #include "../i2c.h"
 
-#include <unistd.h>
-#include "stm32f103xb.h"
+/* free rtos */
+#include "FreeRTOS.h"
+#include "task.h"
 
 /* addr */
 #define TCS34725_ADDRESS (0x29)     /* < I2C address */
 #define TCS34725_COMMAND_BIT (0x80) /* < Command bit */
 #define TCS34725_ID (0x12)          /* < 0x44 = TCS34721/TCS34725, 0x4D = TCS34723/TCS34727 */
-#define TCS34725_ENABLE (0x00) /* Enable Register (0x00) */
-#define TCS34725_RGBCTIME (0x01) /* RGBC Timing Register  (0x01) */
-#define TCS34725_WAITTIME (0X03) /* Wait Time Register  (0x03) */
-#define TCS34725_CNTRLREG (0X0F) /* Control Register  (0x0F) */
+#define TCS34725_ENABLE (0x00)      /* Enable Register (0x00) */
+#define TCS34725_RGBCTIME (0x01)    /* RGBC Timing Register  (0x01) */
+#define TCS34725_WAITTIME (0X03)    /* Wait Time Register  (0x03) */
+#define TCS34725_CNTRLREG (0X0F)    /* Control Register  (0x0F) */
 
 /* readable registers voor determining colours */
-#define TCS34725_CDATA (0x14) /* < Clear channel data low byte */
-#define TCS34725_RDATA (0x16) /* < Red channel data low byte */
-#define TCS34725_GDATA (0x18) /* < Green channel data low byte */
-#define TCS34725_BDATA (0x1A) /* < Blue channel data low byte */
+#define TCS34725_CDATA (0x14)       /* < Clear channel data low byte */
+#define TCS34725_RDATA (0x16)       /* < Red channel data low byte */
+#define TCS34725_GDATA (0x18)       /* < Green channel data low byte */
+#define TCS34725_BDATA (0x1A)       /* < Blue channel data low byte */
 
 /* rgb pins for controlling led and reading */
 /* GPIOx_CRL  x= A..G */
@@ -30,7 +34,10 @@ unsigned long time = 0;
 /* private functions */
 static _Bool checkDeviceID();
 static _Bool  initPins();
-static void rgb_setPin(uint32_t sensorPosition);
+static void rgb_setPin(uint8_t sensorPosition);
+static void rgb_resetPins();
+static void rgb_resetPin(uint8_t sensorPosition);
+
 /* Enable register */
 union EnableRegister
 {
@@ -155,39 +162,6 @@ void rgb_init()
 }
 
 /*
- * Function for initializing all gpio for the rgb sensors.
- */
-static _Bool initPins()
-{
-    /* set pins 0 and 1 of A as output */
-    /* 0x1 == 0001 push pull 10mhz */
-    /* Set A0 to A7 sensor 1 to 8 */
-    TCS34725_SENSOR1_8_CONFIG = 0x11111111;
-    /* Set B12 to B15*/
-    TCS34725_SENSOR9_12_CONFIG = 0x11110000;
-    return 1;
-}
-
-/*
- * Used for setting rgb sensor pin.
- */
-static void rgb_setPin(uint32_t sensorPosition)
-{
-    /* Reset pins */
-    TCS34725_SENSOR1_8_VALUES = 0x00ff0000;
-    TCS34725_SENSOR9_12_VALUES = 0xf0000000;
-    if(sensorPosition >= 0 &&  sensorPosition < 8)
-    {
-        TCS34725_SENSOR1_8_VALUES = (0x00000001 << sensorPosition);
-    }
-    else
-    {
-        TCS34725_SENSOR9_12_VALUES = (0x00001000 << (sensorPosition - 8));
-    }
-
-}
-
-/*
  * Returns the value of of each colour including clear (0-255) of the given rgb sensor.
  */
 struct RGB getRGB(uint8_t position)
@@ -206,6 +180,7 @@ struct RGB getRGB(uint8_t position)
         time++;
     time = 0;
     tmp_RGB.Blue = getBlue(position);
+    rgb_resetPin(position);
     return tmp_RGB;
 }
 
@@ -284,6 +259,8 @@ uint8_t getBlue(uint8_t position)
     return blue;
 }
 
+/* Private functions */
+
 /*
  * Checks if ID is equal to 0x44 so the corresponding sensor is either TCS34721 or TCS34725.
  */
@@ -299,4 +276,68 @@ static _Bool checkDeviceID()
         return 1;
     }
     return 0;
+}
+
+/*
+ * Function for initializing all gpio for the rgb sensors.
+ */
+static _Bool initPins()
+{
+    /* set pins 0 and 1 of A as output */
+    /* 0x1 == 0001 push pull 10mhz */
+    /* Set A0 to A7 sensor 1 to 8 */
+    TCS34725_SENSOR1_8_CONFIG = 0x11111111;
+    /* Set B12 to B15*/
+    TCS34725_SENSOR9_12_CONFIG = 0x11110000;
+    return 1;
+}
+
+/*
+ * Used for resetting all rgb sensor pins.
+ */
+static void rgb_resetPins()
+{
+    TCS34725_SENSOR1_8_VALUES = 0x00ff0000;
+    TCS34725_SENSOR9_12_VALUES = 0xf0000000;
+}
+
+/*
+ * Used for resetting rgb sensor pin.
+ */
+static void rgb_resetPin(uint8_t sensorPosition)
+{
+    if(sensorPosition == 0)
+    {
+        TCS34725_SENSOR1_8_VALUES = (0x00010000);
+    }
+    if(sensorPosition > 0 &&  sensorPosition < 8)
+    {
+        TCS34725_SENSOR1_8_VALUES = (0x00010000 << sensorPosition);
+    }
+    else
+    {
+        TCS34725_SENSOR9_12_VALUES = (0x10000000 << (sensorPosition - 8));
+    }
+}
+
+/*
+ * Used for setting rgb sensor pin.
+ */
+static void rgb_setPin(uint8_t sensorPosition)
+{
+    /* Reset pins */
+    rgb_resetPins();
+    /* Set pin */
+    if(sensorPosition == 0)
+    {
+        TCS34725_SENSOR1_8_VALUES = (0x00000001);
+    }
+    if(sensorPosition > 0 &&  sensorPosition < 8)
+    {
+        TCS34725_SENSOR1_8_VALUES = (0x00000001 << sensorPosition);
+    }
+    else
+    {
+        TCS34725_SENSOR9_12_VALUES = (0x00001000 << (sensorPosition - 8));
+    }
 }
