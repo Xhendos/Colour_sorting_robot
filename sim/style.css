@@ -1,0 +1,173 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+	background-color: lightgrey;
+}
+
+#wrapper {
+	width: 600px;
+	margin: auto;
+	margin-top: 30px;
+}
+
+td {
+	width: 100px;
+	height: 100px;
+}
+
+.color-white {
+	color: white;
+}
+
+#board {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+	background-color: transparent;
+	border-collapse: collapse;
+	display: inline-block;
+	vertical-align: top;
+}
+
+#overlay {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+	background-color: transparent;
+	border-collapse: collapse;
+	display: inline-block;
+	vertical-align: top;
+}
+
+#overlay td {
+	width: 100px;
+	height: 100px;
+}
+
+.placeholder {
+	width: 60px;
+	height: 60px;
+	border-radius: 30px;
+	margin: auto;
+	border: 1px solid black;
+	line-height: 60px;
+	text-align: center;
+}
+
+.arm {
+	width: 60px;
+	height: 60px;
+	margin: auto;
+	border: 1px solid black;
+	line-height: 60px;
+	text-align: center;
+}
+
+#board .placeholder {
+	width: 40px;
+	height: 40px;
+	border-radius: 20px;
+	line-height: 40px;
+	text-align: center;
+}
+
+#overlay .placeholder {
+	border: none;
+}
+
+.final-red {
+	background-color: red;
+	color: white;
+	opacity: 0.3;
+}
+
+.final-green {
+	background-color: green;
+	color: white;
+	opacity: 0.3;
+}
+
+.final-blue {
+	background-color: blue;
+	color: white;
+	opacity: 0.3;
+}
+
+.final-white {
+	background-color: white;
+	color: black;
+	opacity: 0.3;
+}
+
+.red {
+	background-color: red;
+	color: white;
+	opacity: 1;
+}
+
+.green {
+	background-color: green;
+	color: white;
+	opacity: 1;
+}
+
+.blue {
+	background-color: blue;
+	color: white;
+	opacity: 1;
+}
+
+.white {
+	background-color: white;
+	color: black;
+	opacity: 1;
+}
+
+#buttons {
+	position: fixed;
+	display: inline-block;
+	vertical-align: top;
+	margin-left: 520px;
+	width: 80px;
+}
+
+#buttons button {
+	width: 80px;
+	height: 24px;
+	text-align: center;
+	display: block;
+	margin-bottom: 10px;
+}
+
+#canvas {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+}
+
+#background {
+	position: fixed;
+	width: 500px;
+	height: 500px;
+	background-color: bisque;
+}
+
+.node {
+	background-color: black;
+	color: white;
+	opacity: 1;
+}
+
+#input {
+	width: 500px;
+	height: 100px;
+	margin-top: 520px;
+	max-width: 500px;
+	min-width: 500px;
+	min-height: 100px;
+	padding: 5px;
+}
