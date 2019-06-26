@@ -50,6 +50,10 @@ src
     |_ i2c.c
 
 
+sim
+|_ index.html
+|_ style.css
+
 FreeRTOSConfig.h
 Makefile 
 README.md
