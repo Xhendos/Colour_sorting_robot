@@ -29,41 +29,45 @@
 #define _I2C1_CR2		(*((volatile unsigned long *) 0x40005404))		/* Control register 2 */
 #define _I2C1_SR		(*((volatile unsigned long *) 0x40005414))		/* Status register 1 */
 
+
+
 void I2C1_EV_IRQ_handler(void)
 {
 	if(_I2C1_SR & 0x01)	/* SB */
 	{
-		
+
+		_I2C1_SR &= ~(0x01);		
 	}
 
 	if(_I2C1_SR & 0x02)	/* ADDR */
 	{
 
+		_I2C1_SR &= ~(0x02); 
 	}
 
 	if(_I2C1_SR & 0x08)	/* ADD10*/
 	{
-
+		_I2C1_SR &= ~(0x08);
 	}	
 
 	if(_I2C1_SR & 0x10)	/* STOPF */
 	{
-
+		_I2C1_SR &= ~(0x10); 
 	}
 
 	if(_I2C1_SR & 0x04)	/* BTF */
 	{
-
+		_I2C1_SR &= ~(0x04);
 	}
 
 	if(_I2C1_SR & 0x80)	/* TxE */
 	{
-		
+		_I2C1_SR &= ~(0x80);
 	}
 
 	if(_I2C1_SR & 0x40)	/* RxNE */
 	{
-
+		_I2C1_SR &= ~(0x40);
 	}
 }
 
@@ -124,7 +128,7 @@ int main(void)
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);	
 	NVIC_EnableIRQ(I2C1_EV_IRQn);
 
-    	volatile int count = 0;
+    volatile int count = 0;
 	rgb_init();
 	while (1) {
         while(count < 10)
