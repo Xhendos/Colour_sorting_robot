@@ -8,6 +8,7 @@
 #include "uart.h"
 #include "i2c.h"
 #include "stm32f103xb.h"
+#include "rgb.h"
 
 uint8_t pings[48];
 uint8_t movings[48];
@@ -21,6 +22,8 @@ QueueHandle_t armInstructionQueue;
 
 TaskHandle_t armHandle;
 TaskHandle_t movingHandle;
+
+struct RGB test;
 
 void USART1_IRQ_handler(void)
 {
@@ -135,8 +138,133 @@ void USART1_IRQ_handler(void)
 	}
 }
 
+QueueHandle_t i2c_packet_queue;
+volatile uint8_t i2c_busy = 0;
+
+void I2C1_EV_IRQ_handler(void)
+{
+	static struct i2c_message m;
+	
+	if(_I2C1_SR & 0x01)	/* SB */
+	{
+		if(!(i2c_busy))
+		{
+			if(xQueueReceiveFromISR(i2c_packet_queue, &m, NULL) == pdTRUE)
+				i2c_busy = 1;			
+		}
+		if(!(m.write_finished)
+			_I2C1_DR = (m.address << 1) | 0;
+		if(m.write_finished)
+			_I2C1_DR = (m.address << 1) | 1; 
+
+		_I2C1_SR &= ~(0x01);
+	}
+
+	if(_I2C1_SR & 0x02)	/* ADDR */
+	{
+		if(m.write_finished)
+		{
+			if(m.read == 2)
+			{	
+				GPIOB_CRL &= ~(1 << 25);
+				I2C_CR1 |= (1 << 11);
+				
+				I2C_SR1;
+				I2C_SR2;
+
+				I2C_CR1 &= ~(1 << 10);
+				GPIOB_CRL |= (1 << 25);
+			}
+
+			if(m.read == 1)
+			{
+				_I2C_CR1 &= ~(1 << 10);		
+					
+				_I2C_SR1;
+				_I2C_SR2;			
+	
+			}				
+		}
+	
+		if(!m.write_finished)
+		{
+			_I2C_SR1;
+			_I2C_SR2;
+			_I2C1_DR = m.byte;
+			m.write_finished = 1;
+		}
+		
+		_I2C1_SR &= ~(0x02);
+	}
+
+	if(_I2C1_SR & 0x08)	/* ADD10*/
+	{
+
+		_I2C1_SR &= ~(0x08);
+	}
+
+	if(_I2C1_SR & 0x10)	/* STOPF */
+	{
+		_I2C1_SR &= ~(0x10);
+	}
+
+	if(_I2C1_SR & 0x04)	/* BTF */
+	{
+		if(m.write_finished)
+		{
+			_I2C_CR1 |= (1 << 9); 		/* Send a stop bit */
+			m.read_bytes[0] = _I2C_DR;
+			m.read_bytes[1] = _I2C_DR;
+
+			while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
+			_I2C_CR1 &= ~(1 << 11);		/* Clear the POS bit */
+			_I2C_CR1 |= (1 << 10);		/* Set the acknowledgement bit */
+		}
+
+		if(!(m.write_finished))
+		{
+			_I2C1_DR = m.byte; 
+			write_finished = 1;
+		}
+		
+		_I2C1_SR &= ~(0x04);
+	}
+
+	if(_I2C1_SR & 0x80)	/* TxE */
+	{
+		_I2C1_SR &= ~(0x80);
+	}
+
+	if(_I2C1_SR & 0x40)	/* RxNE */
+	{
+		m.read_bytes[0] = _I2C_DR;
+
+		while(_I2C_CR1 & 0x200);		/* Wait untill STOP bit has been transmitted */
+		_I2C_CR1 |= (1 << 10);			/* Set acknowledgement returned after byte is received on */
+		_I2C1_SR &= ~(0x40);
+	}
+}
+
 void init_task()
 {
+    /************************************************************
+	*  Pin number  *	Pin name   	*	Alternative function	*
+	*************************************************************
+	*      42      *     PB6		*			I2C1_SCL		*
+	*************************************************************
+	*      43	   *	 PB7		*			I2C_SDA			*
+	*************************************************************
+	*	   29	   *	 PA8		*			USART1_CK		*
+	*************************************************************
+	*	   30	   *	 PA9		*			USART1_TX		*
+	*************************************************************
+	*	   31	   *	 PA10		*			USART1_RX		*
+	*************************************************************
+	*	   32	   *	 PA11		*			USART1_CTS		*
+	*************************************************************
+	*	   33	   *	 PA12		*			USART1_RTS		*
+	*************************************************************/
+
 	_RCC_CR |= 1;				/* Turn on the internal 8 MHz oscillator */
 	_RCC_CFGR &= ~(0x482);		/* Do NOT divide the HCLK (which is the ABP clock) and use the internal 8 MHz oscillator as clock source */
 
@@ -163,8 +291,11 @@ void init_task()
 	_RCC_APB2RSTR |= (1 << 14);	/* Reset the USART1 module */
 	_RCC_APB2RSTR &= ~(1 << 14);/* Stop resetting the USART1 module */
 
+	_I2C1_CR2 |= 0x200;
+
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
+	rgb_init();
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
@@ -175,26 +306,30 @@ void init_task()
 	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
 	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
 
+	i2c_packet_queue = xQueueCreate(1, sizeof(struct i2c_message));
+
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
-	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
-	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
-	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
-	//xTaskCreate(rgb_task, "rgb", 128, NULL, 6, NULL);
+    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+	//xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+	//xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
+	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
 	/* Set priorities and interrupts */
 	NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); //https://www.freertos.org/RTOS-Cortex-M3-M4.html
 	NVIC_SetPriority(37, 0);
+	NVIC_SetPriority(I2C1_EV_IRQn, 1);
+	//NVIC_EnableIRQ(I2C1_EV_IRQn);
 	NVIC_ClearPendingIRQ(37);
-	NVIC_EnableIRQ(37);
+	//NVIC_EnableIRQ(37);
 
     instruction_t instruction = {0, ARM_6, 240, 60, 0, "t5", "t6"};
     xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
 
-    xTaskNotifyGive(movingHandle);
+    //xTaskNotifyGive(movingHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
@@ -438,7 +573,14 @@ void moving_task()
 
 void rgb_task()
 {
-
+    volatile int count = 0;
+	while (1)
+    {
+        while(count < 10)
+            count++;
+        count = 0;
+        test = getRGB(1);
+    }
 }
 
 uint8_t idToIndex(uint8_t id)

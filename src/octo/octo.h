@@ -23,9 +23,23 @@
 #define	_GPIOB_CRL		(*((volatile unsigned long *) 0x40010C00))		/* Port configuration register low */
 #define _GPIOB_BSRR		(*((volatile unsigned long *) 0x40010C10))		/* set/reset register */
 
+/* I2C */
+#define _I2C1_CR2		(*((volatile unsigned long *) 0x40005404))		/* Control register 2 */
+#define _I2C1_SR		(*((volatile unsigned long *) 0x40005414))		/* Status register 1 */
+
 #define GPIOC_CLK       (*((volatile uint32_t *) 0x40021018))
 #define GPIOC_HIGH      (*((volatile uint32_t *) 0x40011004))
 #define GPIOC_SR		(*((volatile uint32_t *) 0x40011010))
+
+
+struct i2c_message
+{
+	uint8_t address;
+	uint8_t byte;
+	uint8_t write_finished;
+	uint8_t read;
+	uint8_t read_bytes[2];
+};
 
 typedef enum {
 	ARM_0 = 0,
