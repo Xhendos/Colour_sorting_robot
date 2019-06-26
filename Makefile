@@ -136,6 +136,7 @@ C_SRC    += ./src/i2c/i2c.c
 C_SRC    += ./src/uart/uart.c
 C_SRC    += ./src/octo/octo.c
 C_SRC    += ./src/ax12/ax12.c
+C_SRC	 += ./src/i2c/rgb/rgb.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
@@ -146,6 +147,7 @@ INCLUDE  += -I./src/i2c
 INCLUDE  += -I./src/uart
 INCLUDE  += -I./src/octo
 INCLUDE  += -I./src/ax12
+INCLUDE  += -I./src/i2c/rgb
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)
