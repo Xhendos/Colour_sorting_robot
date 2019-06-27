@@ -9,6 +9,7 @@
 #include "i2c.h"
 #include "stm32f103xb.h"
 #include "rgb.h"
+#include "algo.h"
 
 uint8_t pings[48];
 uint8_t movings[48];
@@ -239,11 +240,11 @@ void init_task()
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
-	//xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
-	//xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
-	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
-	xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
+    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
+	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
@@ -253,12 +254,17 @@ void init_task()
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);
 	//NVIC_EnableIRQ(I2C1_EV_IRQn);
 	NVIC_ClearPendingIRQ(37);
-	//NVIC_EnableIRQ(37);
+	NVIC_EnableIRQ(37);
 
-    instruction_t instruction = {0, ARM_6, 240, 60, 0, "t5", "t6"};
+    //instruction_t instruction = {0, ARM_6, 240, 60, 0, T4, T5};
+    instruction_t instruction = edge_to_instruction(T4, T5);
+    instruction_t instruction1 = edge_to_instruction(T0, T1);
+    instruction_t instruction2 = edge_to_instruction(T1, F1);
     xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
+    xQueueSend(armInstructionQueue, &instruction1, portMAX_DELAY);
+    xQueueSend(armInstructionQueue, &instruction2, portMAX_DELAY);
 
-    //xTaskNotifyGive(movingHandle);
+    xTaskNotifyGive(movingHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
@@ -318,10 +324,10 @@ void arm_task()
                     continue;
                 }
 
-                if (strcmp(instruction->from, previous_instruction->from) == 0
-                    || strcmp(instruction->from, previous_instruction->to) == 0
-                    || strcmp(instruction->to, previous_instruction->from) == 0
-                    || strcmp(instruction->to, previous_instruction->to) == 0)
+                if (instruction->from == previous_instruction->from
+                    || instruction->from == previous_instruction->to
+                    || instruction->to == previous_instruction->from
+                    || instruction->to == previous_instruction->to)
                 {
                     instruction_allowed = 0;
                     break;
