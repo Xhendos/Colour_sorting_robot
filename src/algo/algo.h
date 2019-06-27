@@ -3,6 +3,7 @@
 
 #include "ax12.h"
 
-extern instruction_t edge_to_instruction(placeholders_t from, placeholders_t to);
+extern instruction_t edge_to_instruction(uint8_t from, uint8_t to);
+extern void mmaaiinn(int begin[4], int end[4]);
 
 #endif

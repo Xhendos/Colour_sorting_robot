@@ -112,6 +112,7 @@ extern void moving_task();
 extern void position_task();
 extern void rgb_task();
 extern void prepareArms_task();
+extern void algo_task();
 
 extern uint8_t idToIndex(uint8_t id);
 extern uint8_t indexToId(uint8_t index);

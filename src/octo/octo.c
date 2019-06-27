@@ -225,9 +225,9 @@ void init_task()
 
 	_I2C1_CR2 |= 0x200;
 
-	i2c_init();					/* Initialise the I2C1 module */
-	uart_init();				/* Initialise the USART1 module */
-	rgb_init();
+	//i2c_init();					/* Initialise the I2C1 module */
+	//uart_init();				/* Initialise the USART1 module */
+	//rgb_init();
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
@@ -240,11 +240,12 @@ void init_task()
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
-	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+	//xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
 	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
-	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
+    xTaskCreate(algo_task, "algo", 1000, NULL, 10, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
@@ -254,20 +255,30 @@ void init_task()
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);
 	//NVIC_EnableIRQ(I2C1_EV_IRQn);
 	NVIC_ClearPendingIRQ(37);
-	NVIC_EnableIRQ(37);
+	//NVIC_EnableIRQ(37);
 
     //instruction_t instruction = {0, ARM_6, 240, 60, 0, T4, T5};
-    instruction_t instruction = edge_to_instruction(T4, T5);
-    instruction_t instruction1 = edge_to_instruction(T0, T1);
-    instruction_t instruction2 = edge_to_instruction(T1, F1);
-    xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
-    xQueueSend(armInstructionQueue, &instruction1, portMAX_DELAY);
-    xQueueSend(armInstructionQueue, &instruction2, portMAX_DELAY);
+    //instruction_t instruction = edge_to_instruction(T4, T5);
+    //instruction_t instruction1 = edge_to_instruction(T0, T1);
+    //instruction_t instruction2 = edge_to_instruction(T1, F1);
+    //xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
+    //xQueueSend(armInstructionQueue, &instruction1, portMAX_DELAY);
+    //xQueueSend(armInstructionQueue, &instruction2, portMAX_DELAY);
 
-    xTaskNotifyGive(movingHandle);
+    //xTaskNotifyGive(movingHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
+}
+
+void algo_task()
+{
+    int aa[4] = {T0, T2, T4, T6};
+    int bb[4] = {F0, F1, F2, F3};
+
+    mmaaiinn(aa, bb);
+
+    vTaskDelete(NULL);
 }
 
 void uart_task()
@@ -491,18 +502,18 @@ void moving_task()
 
     while (1)
     {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
 		for (uint8_t arm = ARM_0_BASE; arm <= ARM_7_BASE; arm += 10)
 		{
 			for (uint8_t motor = MOTOR_A; motor <= MOTOR_F; ++motor)
             {
                 packet.id = arm + motor;
-				xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
+				//xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             }
         }
 
-        xTaskNotifyGive(armHandle);
+        //xTaskNotifyGive(armHandle);
     }
 }
 
