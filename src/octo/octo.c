@@ -138,41 +138,134 @@ void USART1_IRQ_handler(void)
 	}
 }
 
+QueueHandle_t i2c_packet_queue;
+volatile uint8_t i2c_busy = 0;
+
 void I2C1_EV_IRQ_handler(void)
 {
+	static struct i2c_message m;
+
 	if(_I2C1_SR & 0x01)	/* SB */
 	{
-
+		if(!(i2c_busy))
+		{
+			if(xQueueReceiveFromISR(i2c_packet_queue, &m, NULL) == pdTRUE)
+				i2c_busy = 1;
+		}
+		if(i2c_busy)
+		{
+			if(!(m.write_finished)
+				_I2C1_DR = (m.address << 1) | 0;
+			if(m.write_finished)
+				_I2C1_DR = (m.address << 1) | 1;
+		}
+		_I2C1_SR &= ~(0x01);
 	}
 
 	if(_I2C1_SR & 0x02)	/* ADDR */
 	{
+		if(m.write_finished)
+		{
+			if(m.read == 2)
+			{
+				GPIOB_CRL &= ~(1 << 25);
+				I2C_CR1 |= (1 << 11);
 
+				I2C_SR1;
+				I2C_SR2;
+
+				I2C_CR1 &= ~(1 << 10);
+				GPIOB_CRL |= (1 << 25);
+			}
+
+			if(m.read == 1)
+			{
+				_I2C_CR1 &= ~(1 << 10);
+
+				_I2C_SR1;
+				_I2C_SR2;
+
+			}
+		}
+
+		if(!m.write_finished)
+		{
+			_I2C_SR1;
+			_I2C_SR2;
+			_I2C1_DR = m.byte;
+		}
+
+		_I2C1_SR &= ~(0x02);
 	}
 
 	if(_I2C1_SR & 0x08)	/* ADD10*/
 	{
 
+		_I2C1_SR &= ~(0x08);
 	}
 
 	if(_I2C1_SR & 0x10)	/* STOPF */
 	{
-
+		_I2C1_SR &= ~(0x10);
 	}
 
 	if(_I2C1_SR & 0x04)	/* BTF */
 	{
+		if(m.write_finished)
+		{
+			_I2C_CR1 |= (1 << 9); 		/* Send a stop bit */
+			m.read_bytes[0] = _I2C_DR;
+			m.read_bytes[1] = _I2C_DR;
 
+			while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
+			_I2C_CR1 &= ~(1 << 11);		/* Clear the POS bit */
+			_I2C_CR1 |= (1 << 10);		/* Set the acknowledgement bit */
+		}
+
+		if(!(m.write_finished))
+		{
+			_I2C_CR1 |= (1 << 9);		/* Send a stop bit */
+			while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
+
+			write_finished = 1;
+			if(m.read)
+			{
+				_I2C_CR1 |= (1 << 8);	/* Generate a START condition by pulling the I2C data bus low */
+			}
+
+			if(!(m.read))
+			{
+            	xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+			}
+		}
+
+		_I2C1_SR &= ~(0x04);
 	}
 
 	if(_I2C1_SR & 0x80)	/* TxE */
 	{
-
+		_I2C1_SR &= ~(0x80);
 	}
 
 	if(_I2C1_SR & 0x40)	/* RxNE */
 	{
+		if(m.read == 1)
+		{
+			m.read_bytes[0] = _I2C_DR;
 
+			while(_I2C_CR1 & 0x200);		/* Wait untill STOP bit has been transmitted */
+			_I2C_CR1 |= (1 << 10);			/* Set acknowledgement returned after byte is received on */
+
+			m.read_bytes[0] = _I2C_DR;
+			xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+		}
+
+		if(m.read == 2)
+		{
+
+		}
+
+		_I2C1_SR &= ~(0x40);
 	}
 }
 
@@ -236,6 +329,8 @@ void init_task()
 	usartPacketQueue = xQueueCreate(1, sizeof(ax_packet_t));
 	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
 	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
+
+	i2c_packet_queue = xQueueCreate(1, sizeof(struct i2c_message));
 
 	/*Tasks.
 	xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
