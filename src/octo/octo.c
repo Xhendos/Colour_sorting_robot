@@ -152,11 +152,13 @@ void I2C1_EV_IRQ_handler(void)
 			if(xQueueReceiveFromISR(i2c_packet_queue, &m, NULL) == pdTRUE)
 				i2c_busy = 1;			
 		}
-		if(!(m.write_finished)
-			_I2C1_DR = (m.address << 1) | 0;
-		if(m.write_finished)
-			_I2C1_DR = (m.address << 1) | 1; 
-
+		if(i2c_busy)
+		{
+			if(!(m.write_finished)
+				_I2C1_DR = (m.address << 1) | 0;
+			if(m.write_finished)
+				_I2C1_DR = (m.address << 1) | 1; 
+		}
 		_I2C1_SR &= ~(0x01);
 	}
 
@@ -182,7 +184,7 @@ void I2C1_EV_IRQ_handler(void)
 					
 				_I2C_SR1;
 				_I2C_SR2;			
-	
+						
 			}				
 		}
 	
@@ -191,7 +193,6 @@ void I2C1_EV_IRQ_handler(void)
 			_I2C_SR1;
 			_I2C_SR2;
 			_I2C1_DR = m.byte;
-			m.write_finished = 1;
 		}
 		
 		_I2C1_SR &= ~(0x02);
@@ -223,8 +224,19 @@ void I2C1_EV_IRQ_handler(void)
 
 		if(!(m.write_finished))
 		{
-			_I2C1_DR = m.byte; 
+			_I2C_CR1 |= (1 << 9);		/* Send a stop bit */
+			while(_I2C_CR1 & 0x200);	/* Wait untill stop bit has been sent */
+
 			write_finished = 1;
+			if(m.read)
+			{
+				_I2C_CR1 |= (1 << 8);	/* Generate a START condition by pulling the I2C data bus low */	
+			}
+			
+			if(!(m.read))
+			{
+            	xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+			}			
 		}
 		
 		_I2C1_SR &= ~(0x04);
@@ -237,10 +249,22 @@ void I2C1_EV_IRQ_handler(void)
 
 	if(_I2C1_SR & 0x40)	/* RxNE */
 	{
-		m.read_bytes[0] = _I2C_DR;
+		if(m.read == 1)
+		{
+			m.read_bytes[0] = _I2C_DR;
 
-		while(_I2C_CR1 & 0x200);		/* Wait untill STOP bit has been transmitted */
-		_I2C_CR1 |= (1 << 10);			/* Set acknowledgement returned after byte is received on */
+			while(_I2C_CR1 & 0x200);		/* Wait untill STOP bit has been transmitted */
+			_I2C_CR1 |= (1 << 10);			/* Set acknowledgement returned after byte is received on */
+		
+			m.read_bytes[0] = _I2C_DR;
+			xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+		}
+
+		if(m.read == 2)
+		{
+						
+		}
+		
 		_I2C1_SR &= ~(0x40);
 	}
 }
