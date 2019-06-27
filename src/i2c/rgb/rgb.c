@@ -25,12 +25,14 @@
 
 /* rgb pins for controlling led and reading */
 /* GPIOx_CRL  x= A..G */
-#define TCS34725_SENSOR1_8_CONFIG  (*((volatile uint32_t *) 0x40010800)) /*  define location addr of sensor 1-8  low input gpioA*/
+#define TCS34725_SENSOR1_8_CONFIG  (*((volatile uint32_t *) 0x40010800)) /*  define location addr of sensor 1-8  low input gpioA(0 - 7)*/
 #define TCS34725_SENSOR1_8_VALUES  (*((volatile uint32_t *) 0x40010810)) /* define value addrs of sensor 1-8 */
-#define TCS34725_SENSOR9_12_CONFIG (*((volatile uint32_t *) 0x40010c04)) /* define location addr of sensor 9-12  high input gpioB*/
+#define TCS34725_SENSOR9_12_CONFIG (*((volatile uint32_t *) 0x40010c04)) /* define location addr of sensor 9-12  high input gpioB(12 - 15)*/
 #define TCS34725_SENSOR9_12_VALUES (*((volatile uint32_t *) 0x40010c10)) /* define value addrs of sensor 9-12 */
-#define SENSORCOUNT 1
+
+/* Local variables */
 unsigned long time = 0;
+
 /* private functions */
 static _Bool checkDeviceID();
 static _Bool  initPins();
@@ -162,12 +164,20 @@ void rgb_init()
 }
 
 /*
+ * Returns the amount of sensor connected to the stm or cks.
+ */
+uint8_t getSensorCount()
+{
+    return SENSORCOUNT;
+}
+
+/*
  * Returns the value of of each colour including clear (0-255) of the given rgb sensor.
  */
 struct RGB getRGB(uint8_t position)
 {
     rgb_setPin(position);
-    while(time < 10)
+    while(time < 200000)
         time++;
     time = 0;
     volatile struct RGB tmp_RGB;
@@ -180,6 +190,9 @@ struct RGB getRGB(uint8_t position)
         time++;
     time = 0;
     tmp_RGB.Blue = getBlue(position);
+    while(time < 100000)
+        time++;
+    time = 0;
     rgb_resetPin(position);
     return tmp_RGB;
 }
@@ -297,8 +310,8 @@ static _Bool initPins()
  */
 static void rgb_resetPins()
 {
-    TCS34725_SENSOR1_8_VALUES = 0x00ff0000;
-    TCS34725_SENSOR9_12_VALUES = 0xf0000000;
+    TCS34725_SENSOR1_8_VALUES = 0x00FF0000;
+    TCS34725_SENSOR9_12_VALUES = 0xF0000000;
 }
 
 /*

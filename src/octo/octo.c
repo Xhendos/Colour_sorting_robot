@@ -8,10 +8,10 @@
 #include "uart.h"
 #include "i2c.h"
 #include "stm32f103xb.h"
-#include "rgb.h"
 
 uint8_t pings[48];
 uint8_t movings[48];
+struct RGB rgbsensors[12];
 uint8_t dummy;
 uint8_t inProgress;
 
@@ -226,7 +226,7 @@ void init_task()
 
 	i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
-	rgb_init();
+	rgb_init();                 /* Initialise the RGB sensors */
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
@@ -237,12 +237,12 @@ void init_task()
 	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
 	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
 
-	//Tasks.
-	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
-	//xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
-	//xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
-	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	/*Tasks.
+	xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
+    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
+	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);/**/
 	xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
@@ -430,8 +430,8 @@ void prepareArms_task()
             //Max Torque.
             packet = generateWritePacket(id, AX_MAX_TORQUE, maxTorque);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-            //Status Return Level.
-            //Return status packet for all instruction packets.
+            /*Status Return Level.
+            Return status packet for all instruction packets./**/
             packet = generateWritePacket(id, AX_STATUS_RETURN_LEVEL, 2);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             //Alarm LED.
@@ -502,13 +502,14 @@ void moving_task()
 
 void rgb_task()
 {
-    volatile int count = 0;
-	while (1)
+    uint8_t currentRGB = 0;
+    while (1)
     {
-        while(count < 10)
-            count++;
-        count = 0;
-        test = getRGB(1);
+        for (currentRGB = 0; currentRGB < SENSORCOUNT; currentRGB++)
+        {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            rgbsensors[currentRGB] = getRGB(currentRGB);
+        }
     }
 }
 
