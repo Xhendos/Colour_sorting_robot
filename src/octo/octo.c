@@ -245,7 +245,7 @@ void init_task()
 	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
 	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
-    //xTaskCreate(algo_task, "algo", 1000, NULL, 10, NULL);
+    xTaskCreate(algo_task, "algo", 500, NULL, 10, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
@@ -256,14 +256,6 @@ void init_task()
 	//NVIC_EnableIRQ(I2C1_EV_IRQn);
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
-
-    //instruction_t instruction = {0, ARM_6, 240, 60, 0, T4, T5};
-    instruction_t instruction = edge_to_instruction(T7, T0);
-    instruction_t instruction1 = edge_to_instruction(T0, T1);
-    instruction_t instruction2 = edge_to_instruction(T1, F1);
-    xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
-    xQueueSend(armInstructionQueue, &instruction1, portMAX_DELAY);
-    xQueueSend(armInstructionQueue, &instruction2, portMAX_DELAY);
 
     xTaskNotifyGive(movingHandle);
 
