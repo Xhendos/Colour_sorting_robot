@@ -138,7 +138,9 @@ void USART1_IRQ_handler(void)
 	}
 }
 
-QueueHandle_t i2c_packet_queue;
+QueueHandle_t i2c_to_isr;
+QueueHandle_t i2c_from_isr;
+
 volatile uint8_t i2c_busy = 0;
 
 void I2C1_EV_IRQ_handler(void)
@@ -149,7 +151,7 @@ void I2C1_EV_IRQ_handler(void)
 	{
 		if(!(i2c_busy))
 		{
-			if(xQueueReceiveFromISR(i2c_packet_queue, &m, NULL) == pdTRUE)
+			if(xQueueReceiveFromISR(i2c_to_isr, &m, NULL) == pdTRUE)
 				i2c_busy = 1;
 		}
 		if(i2c_busy)
@@ -235,7 +237,7 @@ void I2C1_EV_IRQ_handler(void)
 
 			if(!(m.read))
 			{
-            	xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+            	xQueueSendFromISR(i2c_from_isr, &m, NULL);
 			}
 		}
 
@@ -257,7 +259,7 @@ void I2C1_EV_IRQ_handler(void)
 			_I2C_CR1 |= (1 << 10);			/* Set acknowledgement returned after byte is received on */
 
 			m.read_bytes[0] = _I2C_DR;
-			xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+			xQueueSendFromISR(i2c_from_isr, &m, NULL);
 		}
 
 		if(m.read == 2)
@@ -317,9 +319,6 @@ void init_task()
 
 	_I2C1_CR2 |= 0x200;
 
-	i2c_init();					/* Initialise the I2C1 module */
-	uart_init();				/* Initialise the USART1 module */
-	rgb_init();                 /* Initialise the RGB sensors */
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
@@ -330,7 +329,9 @@ void init_task()
 	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
 	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
 
-	i2c_packet_queue = xQueueCreate(1, sizeof(struct i2c_message));
+	i2c_to_isr = xQueueCreate(1, sizeof(struct i2c_message));
+    i2c_from_isr = xQueueCreate(1, sizeof(struct i2c_message));
+
 
 	/*Tasks.
 	xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
@@ -338,17 +339,24 @@ void init_task()
 	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
 	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
 	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);/**/
-	xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
+	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
+    _I2C_CR2 |= (1 << 9);
 
 	/* Set priorities and interrupts */
 	NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); //https://www.freertos.org/RTOS-Cortex-M3-M4.html
 	NVIC_SetPriority(37, 0);
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);
-	//NVIC_EnableIRQ(I2C1_EV_IRQn);
+	NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
+	NVIC_EnableIRQ(I2C1_EV_IRQn);
 	NVIC_ClearPendingIRQ(37);
 	//NVIC_EnableIRQ(37);
+
+
+    i2c_init();					/* Initialise the I2C1 module */
+    uart_init();				/* Initialise the USART1 module */
+    rgb_init();                 /* Initialise the RGB sensors */
 
     instruction_t instruction = {0, ARM_6, 240, 60, 0, "t5", "t6"};
     xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);

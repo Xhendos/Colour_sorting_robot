@@ -7,6 +7,7 @@
 /* free rtos */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "octo.h"
 
 /* addr */
 #define TCS34725_ADDRESS (0x29)     /* < I2C address */
@@ -29,6 +30,8 @@
 #define TCS34725_SENSOR1_8_VALUES  (*((volatile uint32_t *) 0x40010810)) /* define value addrs of sensor 1-8 */
 #define TCS34725_SENSOR9_12_CONFIG (*((volatile uint32_t *) 0x40010c04)) /* define location addr of sensor 9-12  high input gpioB(12 - 15)*/
 #define TCS34725_SENSOR9_12_VALUES (*((volatile uint32_t *) 0x40010c10)) /* define value addrs of sensor 9-12 */
+
+
 
 /* Local variables */
 unsigned long time = 0;
@@ -273,21 +276,36 @@ uint8_t getBlue(uint8_t position)
 }
 
 /* Private functions */
-
+extern QueueHandle_t i2c_to_isr;
+extern QueueHandle_t i2c_from_isr;
 /*
+ *
  * Checks if ID is equal to 0x44 so the corresponding sensor is either TCS34721 or TCS34725.
  */
 static _Bool checkDeviceID()
 {
     /* Read id and check if rgb sensor is a TCS34725 */
-    i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_ID | TCS34725_COMMAND_BIT);
-    i2c_stop_transmission();
+    //i2c_begin_transmission(TCS34725_ADDRESS, TCS34725_ID | TCS34725_COMMAND_BIT);
+    //i2c_stop_transmission();
 
+    struct i2c_message m;
+    m.address = TCS34725_ADDRESS;
+    m.byte = TCS34725_ID | TCS34725_COMMAND_BIT;
+    m.write_finished = 0;
+    m.read = 1;
+
+    xQueueSend(i2c_to_isr, &m, portMAX_DELAY);
+    _I2C_CR1 |= (1 << 8);
+    xQueueReceive(i2c_from_isr, &m, portMAX_DELAY);
+
+    volatile int i = 0;
+    i++;
     volatile uint8_t ret = i2c_read_byte(TCS34725_ADDRESS);
-    if (ret == 0x44)
-    {
+    if (ret == 0x44) {
         return 1;
+
     }
+
     return 0;
 }
 
