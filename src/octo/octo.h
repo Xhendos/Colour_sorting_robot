@@ -123,6 +123,7 @@ extern void moving_task();
 extern void position_task();
 extern void rgb_task();
 extern void prepareArms_task();
+extern void algo_task();
 
 extern uint8_t idToIndex(uint8_t id);
 extern uint8_t indexToId(uint8_t index);
@@ -135,6 +136,7 @@ extern void wrist(uint8_t arm, uint16_t degrees);
 extern void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees);
 extern void setSpeed(uint8_t motor, uint16_t rpm);
 extern void setGoalPosition(uint8_t motor, uint16_t degrees);
+extern void setGoalPositions(arm_t arm, uint16_t a, uint16_t b, uint16_t c, uint16_t d, uint16_t e, uint16_t f);
 
 #endif
 

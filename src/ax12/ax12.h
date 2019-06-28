@@ -66,8 +66,8 @@ typedef struct {
 	uint16_t r1;
 	uint16_t r2;
 	uint8_t state;
-	char *from;
-	char *to;
+    uint8_t from;
+    uint8_t to;
 } instruction_t;
 
 typedef struct {
