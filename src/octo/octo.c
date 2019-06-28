@@ -9,6 +9,7 @@
 #include "i2c.h"
 #include "stm32f103xb.h"
 #include "rgb.h"
+#include "algo.h"
 
 uint8_t pings[48];
 uint8_t movings[48];
@@ -317,9 +318,9 @@ void init_task()
 
 	_I2C1_CR2 |= 0x200;
 
-	i2c_init();					/* Initialise the I2C1 module */
+	//i2c_init();					/* Initialise the I2C1 module */
 	uart_init();				/* Initialise the USART1 module */
-	rgb_init();
+	//rgb_init();
 
 	//Good pings are 0x0 and could otherwise not be distinguished.
 	memset(pings, ~0, sizeof(pings));
@@ -334,11 +335,12 @@ void init_task()
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    //xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
-	//xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
-	//xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
-	//xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
-	xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
+    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
+	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
+    xTaskCreate(algo_task, "algo", 500, NULL, 10, NULL);
 
 	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
 
@@ -348,15 +350,22 @@ void init_task()
 	NVIC_SetPriority(I2C1_EV_IRQn, 1);
 	//NVIC_EnableIRQ(I2C1_EV_IRQn);
 	NVIC_ClearPendingIRQ(37);
-	//NVIC_EnableIRQ(37);
+	NVIC_EnableIRQ(37);
 
-    instruction_t instruction = {0, ARM_6, 240, 60, 0, "t5", "t6"};
-    xQueueSend(armInstructionQueue, &instruction, portMAX_DELAY);
-
-    //xTaskNotifyGive(movingHandle);
+    xTaskNotifyGive(movingHandle);
 
 	//Init task suicide.
 	vTaskDelete(NULL);
+}
+
+void algo_task()
+{
+    int aa[4] = {T0, T2, T4, T6};
+    int bb[4] = {F0, F1, F2, F3};
+
+    mmaaiinn(aa, bb);
+
+    vTaskDelete(NULL);
 }
 
 void uart_task()
@@ -413,10 +422,10 @@ void arm_task()
                     continue;
                 }
 
-                if (strcmp(instruction->from, previous_instruction->from) == 0
-                    || strcmp(instruction->from, previous_instruction->to) == 0
-                    || strcmp(instruction->to, previous_instruction->from) == 0
-                    || strcmp(instruction->to, previous_instruction->to) == 0)
+                if (instruction->from == previous_instruction->from
+                    || instruction->from == previous_instruction->to
+                    || instruction->to == previous_instruction->from
+                    || instruction->to == previous_instruction->to)
                 {
                     instruction_allowed = 0;
                     break;
@@ -448,42 +457,53 @@ void arm_task()
 
             switch (instruction->state)
             {
-                case 0: //rotate
-                    rotate(instruction->arm, instruction->r1);
+                case 0:
+                    setGoalPositions(instruction->arm, instruction->r1, 195, 60, 105, 140, 160);
                     break;
-                case 1: //extend
-                    stretch(instruction->arm, 95, 115, 110);
+                case 1:
+                    setGoalPositions(instruction->arm, instruction->r1, 60, 60, 240, 140, 160);
                     break;
-                case 2: //close
-                    claw(instruction->arm, 160, 140);
+                case 2:
+                    setGoalPositions(instruction->arm, instruction->r1, 60, 80, 220, 140, 160);
                     break;
-                case 3: //lift
-                    wrist(instruction->arm, 150);
+                case 3:
+                    setGoalPositions(instruction->arm, instruction->r1, 60, 80, 220, 160, 140);
                     break;
-                case 4: //retract
-                    stretch(instruction->arm, 195, 60, 60);
+                case 4:
+                    setGoalPositions(instruction->arm, instruction->r1, 105, 80, 220, 160, 140);
                     break;
-                case 5: //rotate
-                    rotate(instruction->arm, instruction->r2);
+                case 5:
+                    setGoalPositions(instruction->arm, instruction->r1, 195, 60, 60, 160, 140);
                     break;
-                case 6: //extend
-                    stretch(instruction->arm, 105, 105, 150);
+                case 6:
+                    setGoalPositions(instruction->arm, instruction->r2, 195, 60, 60, 160, 140);
                     break;
-                case 7: //put
-                    wrist(instruction->arm, 110);
+                case 7:
+                    setGoalPositions(instruction->arm, instruction->r2, 195, 60, 105, 160, 140);
                     break;
-                case 8: //open
-                    claw(instruction->arm, 140, 160);
+                case 8:
+                    setGoalPositions(instruction->arm, instruction->r2, 60, 60, 240, 160, 140);
                     break;
-                case 9: //retract
-                    stretch(instruction->arm, 195, 60, 60);
+                case 9:
+                    setGoalPositions(instruction->arm, instruction->r2, 60, 80, 220, 160, 140);
                     break;
-                case 10: //rotate
-                    rotate(instruction->arm, 150);
+                case 10:
+                    setGoalPositions(instruction->arm, instruction->r2, 60, 80, 220, 140, 160);
                     break;
-                case 11: //all state changes complete for this instruction.
+                case 11:
+                    setGoalPositions(instruction->arm, instruction->r2, 60, 60, 240, 140, 160);
+                    break;
+                case 12:
+                    setGoalPositions(instruction->arm, instruction->r2, 105, 60, 240, 140, 160);
+                    break;
+                case 13:
+                    setGoalPositions(instruction->arm, instruction->r2, 195, 60, 60, 140, 160);
+                    break;
+                case 14:
+                    setGoalPositions(instruction->arm, 150, 195, 60, 60, 140, 160);
+                    break;
+                case 15:
                     instruction->flag = 1;
-                    continue;
                 default: //Something went wrong.
                     continue;
             }
@@ -649,6 +669,18 @@ void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees)
 	uint8_t fMotorId = arm * 10 + MOTOR_F;
 	setGoalPosition(eMotorId, eDegrees);
 	setGoalPosition(fMotorId, fDegrees);
+}
+
+void setGoalPositions(arm_t arm, uint16_t a, uint16_t b, uint16_t c, uint16_t d, uint16_t e, uint16_t f)
+{
+    uint8_t armBase = arm * 10;
+    uint16_t degrees[6] = {a, b, c, d, e, f};
+
+    for (int motor = MOTOR_A; motor <= MOTOR_F; ++motor)
+    {
+        uint8_t id = armBase + motor;
+        setGoalPosition(id, degrees[motor - 1]);
+    }
 }
 
 void setGoalPosition(uint8_t motorId, uint16_t degrees)
