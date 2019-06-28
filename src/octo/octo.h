@@ -125,6 +125,7 @@ extern void wrist(uint8_t arm, uint16_t degrees);
 extern void claw(uint8_t arm, uint16_t eDegrees, uint16_t fDegrees);
 extern void setSpeed(uint8_t motor, uint16_t rpm);
 extern void setGoalPosition(uint8_t motor, uint16_t degrees);
+extern void setGoalPositions(arm_t arm, uint16_t a, uint16_t b, uint16_t c, uint16_t d, uint16_t e, uint16_t f);
 
 #endif
 
