@@ -13,6 +13,7 @@
 
 uint8_t pings[48];
 uint8_t movings[48];
+struct RGB rgbsensors[12];
 uint8_t dummy;
 uint8_t inProgress;
 
@@ -139,26 +140,28 @@ void USART1_IRQ_handler(void)
 	}
 }
 
-QueueHandle_t i2c_packet_queue;
+QueueHandle_t i2c_to_isr;
+QueueHandle_t i2c_from_isr;
+
 volatile uint8_t i2c_busy = 0;
 
 void I2C1_EV_IRQ_handler(void)
 {
 	static struct i2c_message m;
-	
+
 	if(_I2C1_SR & 0x01)	/* SB */
 	{
 		if(!(i2c_busy))
 		{
-			if(xQueueReceiveFromISR(i2c_packet_queue, &m, NULL) == pdTRUE)
-				i2c_busy = 1;			
+			if(xQueueReceiveFromISR(i2c_to_isr, &m, NULL) == pdTRUE)
+				i2c_busy = 1;
 		}
 		if(i2c_busy)
 		{
 			if(!(m.write_finished))
 				_I2C_DR = (m.address << 1) | 0;
 			if(m.write_finished)
-				_I2C_DR = (m.address << 1) | 1; 
+				_I2C_DR = (m.address << 1) | 1;
 		}
 		_I2C1_SR &= ~(0x01);
 	}
@@ -171,7 +174,7 @@ void I2C1_EV_IRQ_handler(void)
 			{	
 				_GPIOB_CRL &= ~(1 << 25);
 				_I2C_CR1 |= (1 << 11);
-				
+
 				_I2C_SR1;
 				_I2C_SR2;
 
@@ -184,18 +187,18 @@ void I2C1_EV_IRQ_handler(void)
 				_I2C_CR1 &= ~(1 << 10);		
 					
 				_I2C_SR1;
-				_I2C_SR2;			
-						
-			}				
+				_I2C_SR2;
+
+			}
 		}
-	
+
 		if(!m.write_finished)
 		{
 			_I2C_SR1;
 			_I2C_SR2;
 			_I2C_DR = m.byte;
 		}
-		
+
 		_I2C1_SR &= ~(0x02);
 	}
 
@@ -231,15 +234,15 @@ void I2C1_EV_IRQ_handler(void)
 			m.write_finished = 1;
 			if(m.read)
 			{
-				_I2C_CR1 |= (1 << 8);	/* Generate a START condition by pulling the I2C data bus low */	
+				_I2C_CR1 |= (1 << 8);	/* Generate a START condition by pulling the I2C data bus low */
 			}
-			
+
 			if(!(m.read))
 			{
-            	xQueueSendFromISR(i2c_packet_queue, &m, NULL);
-			}			
+            	xQueueSendFromISR(i2c_from_isr, &m, NULL);
+			}
 		}
-		
+
 		_I2C1_SR &= ~(0x04);
 	}
 
@@ -256,16 +259,16 @@ void I2C1_EV_IRQ_handler(void)
 
 			while(_I2C_CR1 & 0x200);		/* Wait untill STOP bit has been transmitted */
 			_I2C_CR1 |= (1 << 10);			/* Set acknowledgement returned after byte is received on */
-		
+
 			m.read_bytes[0] = _I2C_DR;
-			xQueueSendFromISR(i2c_packet_queue, &m, NULL);
+			xQueueSendFromISR(i2c_from_isr, &m, NULL);
 		}
 
 		if(m.read == 2)
 		{
-						
+
 		}
-		
+
 		_I2C1_SR &= ~(0x40);
 	}
 }
@@ -331,29 +334,31 @@ void init_task()
 	uartSignalQueue = xQueueCreate(1, sizeof(uint8_t));
 	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
 
-	i2c_packet_queue = xQueueCreate(1, sizeof(struct i2c_message));
+	i2c_to_isr = xQueueCreate(1, sizeof(struct i2c_message));
+  i2c_from_isr = xQueueCreate(1, sizeof(struct i2c_message));
 
 	//Tasks.
 	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
+  xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
 	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
 	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
-    xTaskCreate(algo_task, "algo", 500, NULL, 10, NULL);
+  xTaskCreate(algo_task, "algo", 500, NULL, 10, NULL);
 
-	_USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
+  _USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
+  _I2C_CR2 |= (1 << 9);
 
 	/* Set priorities and interrupts */
 	NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); //https://www.freertos.org/RTOS-Cortex-M3-M4.html
 	NVIC_SetPriority(37, 0);
-	NVIC_SetPriority(I2C1_EV_IRQn, 1);
-	//NVIC_EnableIRQ(I2C1_EV_IRQn);
+	/*NVIC_SetPriority(I2C1_EV_IRQn, 1);*/
+	/*NVIC_ClearPendingIRQ(I2C1_EV_IRQn); */
+	/*NVIC_EnableIRQ(I2C1_EV_IRQn); */
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
 
-    xTaskNotifyGive(movingHandle);
-
+  xTaskNotifyGive(movingHandle);
 	//Init task suicide.
 	vTaskDelete(NULL);
 }
@@ -545,8 +550,8 @@ void prepareArms_task()
             //Max Torque.
             packet = generateWritePacket(id, AX_MAX_TORQUE, maxTorque);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-            //Status Return Level.
-            //Return status packet for all instruction packets.
+            /*Status Return Level.
+            Return status packet for all instruction packets./**/
             packet = generateWritePacket(id, AX_STATUS_RETURN_LEVEL, 2);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             //Alarm LED.
@@ -617,13 +622,14 @@ void moving_task()
 
 void rgb_task()
 {
-    volatile int count = 0;
-	while (1)
+    uint8_t currentRGB = 0;
+    while (1)
     {
-        while(count < 10)
-            count++;
-        count = 0;
-        test = getRGB(1);
+        for (currentRGB = 0; currentRGB < SENSORCOUNT; currentRGB++)
+        {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            rgbsensors[currentRGB] = getRGB(currentRGB);
+        }
     }
 }
 

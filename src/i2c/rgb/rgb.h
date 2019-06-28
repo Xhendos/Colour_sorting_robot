@@ -3,16 +3,20 @@
 
 #include <stdint.h>
 
-/* struct */
+/* Amount of sensors */
+#define SENSORCOUNT 1
+
+/* struct for rgb */
 struct RGB
 {
-    uint8_t Red;
-    uint8_t Green;
-    uint8_t Blue;
+    uint16_t Red;
+    uint16_t Green;
+    uint16_t Blue;
 };
 
-/* functions test */
+/* functions */
 void rgb_init();
+uint8_t getSensorCount();
 struct RGB getRGB(uint8_t position);
 uint8_t getRed(uint8_t position);
 uint8_t getGreen(uint8_t position);
