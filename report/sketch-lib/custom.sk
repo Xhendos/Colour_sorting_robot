@@ -1,0 +1,85 @@
+## An example of kinematics diagram for a DISTANCE-DOF robot arm
+## 
+## Author : Alex Dumitrache <alex@cimr.pub.ro>
+## Customized by: Max <521217@student.inholland.nl>
+## License: GPL
+
+def blue<>
+input{lib/defaults.sk}
+input{lib/objects.sk}
+
+def J1 0
+def J2 -90
+def J3 180
+def J4 0
+def J5 90
+def JDISTANCE 90
+def DISTANCE 7
+def BASE_DISTANCE 5
+def LABEL_DISTANCE 3
+
+% The main drawing
+put {scale(0.5)}
+{   
+    put {scale(1)}
+    {
+        # Base
+        put{scale([8,8,0.5])}{box}
+        line [style=dashed] (0,0,0)(0,0,DISTANCE)
+
+        put {translate([0,0,BASE_DISTANCE]) * rotate(J1, [Z])}
+        {
+            # A
+            special|\node[right,text=red,scale=1.5] at #1 {A};|(0,LABEL_DISTANCE,0)
+            put{scale([1,1,3])}{cylinder}
+            line [style=dashed] (0,0,0)(0,0,DISTANCE)
+        
+            put {translate([0,0,DISTANCE]) * rotate(-90, [X]) * rotate(J2+90, [Z])}
+            {
+                # B
+                special|\node[right,text=red,scale=1.5] at #1 {B};|(0,0,LABEL_DISTANCE)
+                put{scale([1,1,3])}{cylinder}
+                line [style=dashed] (0,0,0)(DISTANCE,0,0)
+
+                put {translate([DISTANCE,0,0]) * rotate(J3-180, [Z]) * rotate(90, [Y]) * rotate(90, [Z])}
+                {
+                    # C
+                    special|\node[right,text=red,scale=1.5] at #1 {C};|(0,LABEL_DISTANCE,0)
+                    put{rotate(90, [X]) * scale([1,1,3])}{cylinder}
+                    line [style=dashed] (0,0,0)(0,0,DISTANCE)
+
+                    put {translate([0,0,DISTANCE]) * rotate(180+J4, [Z])}
+                    {
+                        put {rotate(-90, [X]) * rotate(180, [Y])}
+                        {
+                            # D
+                            special|\node[right,text=red,scale=1.5] at #1 {D};|(0,0,LABEL_DISTANCE)
+                            put{scale([1,1,3])}{cylinder}
+                            line [style=dashed] (0,0,0)(0,-DISTANCE,0)
+
+                            put {rotate(J5-90, [Z]) * translate([0,-DISTANCE,0]) * rotate(90, [Y]) * rotate(90, [Z])}
+                            {
+                            	put{translate([0,1.5,0])}{
+                                    # E
+                                    special|\node[right,text=red,scale=1.5] at #1 {E};|(0,LABEL_DISTANCE,0)
+                                    put{scale([1,1,3])}{cylinder}
+                                }
+                                put{translate([0,-1.5,0])}{
+                                    # F
+                                    special|\node[left,text=red,scale=1.5] at #1 {F};|(0,-LABEL_DISTANCE,0)
+                                    put{scale([1,1,3])}{cylinder}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+global
+{ 
+    language tikz
+    camera rotate(0, (1,0,0)) * view((1.5,2,1),(0,0,0),[0,0,1]) * rotate(110, (0,0,1))
+}

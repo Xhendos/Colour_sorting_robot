@@ -1,0 +1,59 @@
+def cylinder_generatrix put{rotate(90,[1,0,0]) then translate([0,0,-0.5])}
+{
+    repeat{segments, rotate(360/segments,[0,1,0])}
+        line[style,e_xtrastyle,nofill](1,0)(1,1)
+}
+
+def cylinder_interior
+<generatrix>
+{
+    put{rotate(90,[1,0,0]) then translate([0,0,-0.5]) then rotate(180/20, [0,0,1])}
+    {
+        def n 20   
+        sweep[style,e_xtrastyle,noline]{n<>, rotate(360/n,[0,1,0])}
+            line[style,e_xtrastyle,noline](1,0)(1,1)
+    }
+    put{scale(1/interior_scale)}{cylinder_generatrix}
+}
+<>
+{
+    put{rotate(90,[1,0,0]) then translate([0,0,-0.5])}
+    {
+        def n 20   
+        sweep[style,e_xtrastyle,noline]{n<>, rotate(360/n,[0,1,0])}
+            line[style,e_xtrastyle,noline](1,0)(1,1)
+    }
+}
+
+def cylinder_circles
+{
+    def n 50
+    sweep [style,e_xtrastyle] { 50, rotate(360 / 50, [0,0,1]) }
+            (1,0,0.5)
+    sweep [style,e_xtrastyle] { 50, rotate(360 / 50, [0,0,1]) }
+            (1,0,-0.5)
+}
+
+
+
+def cylinder 
+<wireframe>
+{
+    put {scale(interior_scale)}{cylinder_interior}
+    {cylinder_circles}    
+    {cylinder_generatrix}
+}
+<varcylinder>
+{
+    def n 20
+    special|\maxlen = 0;|
+    repeat{n, rotate(360/n,[0,1,0])}
+        special|(veclen($#1 - #2$) > \maxlen) * ; \maxlen = veclen($#1 - #2$)|(1,0)(0,0)
+}
+<>
+{
+    put {scale(interior_scale)}{cylinder_interior}
+    {cylinder_circles}    
+}
+
+
