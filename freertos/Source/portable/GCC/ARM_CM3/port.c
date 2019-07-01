@@ -255,8 +255,7 @@ static void prvPortStartFirstTask( void )
  * See header file for description.
  */
 BaseType_t xPortStartScheduler( void )
-{c:337
-
+{
 	/* configMAX_SYSCALL_INTERRUPT_PRIORITY must not be set to 0.
 	See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
 	configASSERT( configMAX_SYSCALL_INTERRUPT_PRIORITY );
