@@ -3,4 +3,6 @@
 *.bin
 *.elf
 *.map
-
+gdb
+flash
+.gdbinit
