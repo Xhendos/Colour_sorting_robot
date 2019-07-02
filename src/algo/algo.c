@@ -217,6 +217,9 @@ int dijkstra(int begin[], int index, int* next_move, size_t size, int end[])
 	{
 	    mindistance = INFINITY;
 
+        //Remove unused warning.
+        nextnode = -1;
+
 	    //nextnode gives the node at minimum distance
 		for(i = 0; i < n; i++)
         {

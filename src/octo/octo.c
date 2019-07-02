@@ -335,19 +335,19 @@ void init_task()
 	armInstructionQueue = xQueueCreate(64, sizeof(instruction_t));
 
 	i2c_to_isr = xQueueCreate(1, sizeof(struct i2c_message));
-  i2c_from_isr = xQueueCreate(1, sizeof(struct i2c_message));
+    i2c_from_isr = xQueueCreate(1, sizeof(struct i2c_message));
 
 	//Tasks.
-	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
-  xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(uart_task, "uart", 128, NULL, 2, NULL);
+    xTaskCreate(algo_task, "algo", 500, NULL, 3, NULL);
 	xTaskCreate(moving_task, "moving", 128, NULL, 3, &movingHandle);
+    xTaskCreate(arm_task, "arm", 128, NULL, 3, &armHandle);
 	xTaskCreate(prepareArms_task, "prepareArms", 128, NULL, 4, NULL);
+	//xTaskCreate(i2c_task, "i2c", 128, NULL, 11, NULL);
 	//xTaskCreate(rgb_task, "rgb", 128, NULL, 1, NULL);
-  xTaskCreate(algo_task, "algo", 500, NULL, 10, NULL);
 
-  _USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
-  _I2C_CR2 |= (1 << 9);
+    _USART_SR &= ~(1 << 6); 	/* Clear TC (transmission complete) bit */
+    _I2C_CR2 |= (1 << 9);
 
 	/* Set priorities and interrupts */
 	NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); //https://www.freertos.org/RTOS-Cortex-M3-M4.html
@@ -358,7 +358,8 @@ void init_task()
 	NVIC_ClearPendingIRQ(37);
 	NVIC_EnableIRQ(37);
 
-  xTaskNotifyGive(movingHandle);
+    xTaskNotifyGive(movingHandle);
+
 	//Init task suicide.
 	vTaskDelete(NULL);
 }
@@ -550,8 +551,8 @@ void prepareArms_task()
             //Max Torque.
             packet = generateWritePacket(id, AX_MAX_TORQUE, maxTorque);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
-            /*Status Return Level.
-            Return status packet for all instruction packets./**/
+            //Status Return Level.
+            //Return status packet for all instruction packets.
             packet = generateWritePacket(id, AX_STATUS_RETURN_LEVEL, 2);
             xQueueSend(uartPacketQueue, &packet, portMAX_DELAY);
             //Alarm LED.
