@@ -1,36 +1,36 @@
-#include "stm32f103xb.h"
 #include <stdint.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "stm32f103xb.h"
 
 int main(void)
 {
     /************************************************************
-	*  Pin number  *	Pin name   	*	Alternative function	*
-	*************************************************************
-	*      42      *     PB6		*			I2C1_SCL		*
-	*************************************************************
-	*      43	   *	 PB7		*			I2C_SDA			*
-	*************************************************************
-	*	   29	   *	 PA8		*			USART1_CK		*
-	*************************************************************
-	*	   30	   *	 PA9		*			USART1_TX		*
-	*************************************************************
-	*	   31	   *	 PA10		*			USART1_RX		*
-	*************************************************************
-	*	   32	   *	 PA11		*			USART1_CTS		*
-	*************************************************************
-	*	   33	   *	 PA12		*			USART1_RTS		*
-	*************************************************************/
+    *   Pin number   *    Pin name  *   Alternative function    *
+    *************************************************************
+    *       42       *      PB6     *         I2C1_SCL          *
+    *************************************************************
+    *       43       *      PB7     *         I2C_SDA           *
+    *************************************************************
+    *       29       *      PA8     *         USART1_CK         *
+    *************************************************************
+    *       30       *      PA9     *         USART1_TX         *
+    *************************************************************
+    *       31       *      PA10    *         USART1_RX         *
+    *************************************************************
+    *       32       *      PA11    *         USART1_CTS        *
+    *************************************************************
+    *       33       *      PA12    *         USART1_RTS        *
+    *************************************************************/
 
-	/************************************************************
-	*  Pin number  *	Pin name   	*	    General purpose     *
-	*************************************************************
-	*    10--17    *     PA0--7		*			RGB0--7		    *
-	*************************************************************
-	*    25--28	   *	 PB12--15	*			RGB8--11		*
-	*************************************************************/
+    /************************************************************
+    *   Pin number   *   Pin name   *      General purpose      *
+    *************************************************************
+    *     10--17     *   PA0--7     *         RGB0--7           *
+    *************************************************************
+    *     25--28     *   PB12--15   *         RGB8--11          *
+    *************************************************************/
 
     RCC->CR = 0;
     RCC->CR |= (RCC_CR_HSION | 0x10 << RCC_CR_HSITRIM_Pos);
@@ -39,16 +39,16 @@ int main(void)
     RCC->CFGR |= (RCC_CFGR_SW_HSI | RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE1_DIV1 | RCC_CFGR_PPRE2_DIV1);
 
     RCC->APB2RSTR = ~0;
-	RCC->APB2RSTR = 0;
+    RCC->APB2RSTR = 0;
 
-	RCC->APB1RSTR = ~0;
-	RCC->APB1RSTR = 0;
+    RCC->APB1RSTR = ~0;
+    RCC->APB1RSTR = 0;
 
-	RCC->APB2ENR = 0;
+    RCC->APB2ENR = 0;
     RCC->APB2ENR = (RCC_APB2ENR_AFIOEN | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPBEN | RCC_APB2ENR_USART1EN);
 
     RCC->APB1ENR = 0;
-	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+    RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
 
     GPIOA->CRL = 0;
     GPIOA->CRL |= GPIO_CRL_MODE0_0;
@@ -60,13 +60,13 @@ int main(void)
     GPIOA->CRL |= GPIO_CRL_MODE6_0;
     GPIOA->CRL |= GPIO_CRL_MODE7_0;
 
-	GPIOA->CRH = 0;
-	GPIOA->CRH |= GPIO_CRL_MODE1;
-	GPIOA->CRH &= ~GPIO_CRL_MODE2;
-	GPIOA->CRH |= GPIO_CRL_CNF1_1;
-	GPIOA->CRH |= GPIO_CRL_CNF2_0;
+    GPIOA->CRH = 0;
+    GPIOA->CRH |= GPIO_CRL_MODE1;
+    GPIOA->CRH &= ~GPIO_CRL_MODE2;
+    GPIOA->CRH |= GPIO_CRL_CNF1_1;
+    GPIOA->CRH |= GPIO_CRL_CNF2_0;
 
-	GPIOB->CRL = 0;
+    GPIOB->CRL = 0;
     GPIOB->CRL |= (GPIO_CRL_MODE0_0 | GPIO_CRL_CNF0_0);
     GPIOB->CRL |= (GPIO_CRL_MODE6 | GPIO_CRL_CNF6_1);
     GPIOB->CRL |= (GPIO_CRL_MODE7 | GPIO_CRL_CNF7_1);
@@ -109,10 +109,10 @@ int main(void)
     I2C1->CR2 |= I2C_CR2_FREQ_3;                /* Clock frequency. FREQ_3 is 8 MHz */
 
     I2C1->CCR = 0;
-	I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;       /* Generate 100 KHz serial clock speed */
+    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;       /* Generate 100 KHz serial clock speed */
 
     I2C1->TRISE = 0;
-	I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;  /* Maximum rise time */
+    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;  /* Maximum rise time */
 
     I2C1->CR1 = 0;
     I2C1->CR1 |= I2C_CR1_PE;                    /* Turn on the peripheral */
