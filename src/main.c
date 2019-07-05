@@ -4,8 +4,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-void task_manager();
-
 int main(void)
 {
     /************************************************************
@@ -29,41 +27,61 @@ int main(void)
 	/************************************************************
 	*  Pin number  *	Pin name   	*	    General purpose     *
 	*************************************************************
-	*      ?       *     PA0--7		*			RGB0--7		    *
+	*    10--17    *     PA0--7		*			RGB0--7		    *
 	*************************************************************
-	*      ?	   *	 PB12--15	*			RGB12--15		*
+	*    25--28	   *	 PB12--15	*			RGB8--11		*
 	*************************************************************/
 
-    RCC->CR |= 1;				/* Turn on the internal 8 MHz oscillator */
-	RCC->CFGR &= ~(0x482);		/* Do NOT divide the HCLK (which is the ABP clock) and use the internal 8 MHz oscillator as clock source */
+    RCC->CR = 0;
+    RCC->CR |= (RCC_CR_HSION | 0x10 << RCC_CR_HSITRIM_Pos);
 
-	RCC->APB2ENR |= 0x1D;		/* Enable alternative function and GPIO port A, B, and C */
-	RCC->APB2ENR |= (1 << 14);	/* Enable the USART1 module */
-	RCC->APB1ENR |= (1 << 21);	/* Enable the I2C1 module */
+    RCC->CFGR = 0;
+    RCC->CFGR |= (RCC_CFGR_SW_HSI | RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE1_DIV1 | RCC_CFGR_PPRE2_DIV1);
+
+    RCC->APB2RSTR = ~0;
+	RCC->APB2RSTR = 0;
+
+	RCC->APB1RSTR = ~0;
+	RCC->APB1RSTR = 0;
+
+	RCC->APB2ENR = 0;
+    RCC->APB2ENR = (RCC_APB2ENR_AFIOEN | RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPBEN | RCC_APB2ENR_USART1EN);
+
+    RCC->APB1ENR = 0;
+	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+
+    GPIOA->CRL = 0;
+    GPIOA->CRL |= GPIO_CRL_MODE0_0;
+    GPIOA->CRL |= GPIO_CRL_MODE1_0;
+    GPIOA->CRL |= GPIO_CRL_MODE2_0;
+    GPIOA->CRL |= GPIO_CRL_MODE3_0;
+    GPIOA->CRL |= GPIO_CRL_MODE4_0;
+    GPIOA->CRL |= GPIO_CRL_MODE5_0;
+    GPIOA->CRL |= GPIO_CRL_MODE6_0;
+    GPIOA->CRL |= GPIO_CRL_MODE7_0;
+
+	GPIOA->CRH = 0;
+	GPIOA->CRH |= GPIO_CRL_MODE1;
+	GPIOA->CRH &= ~GPIO_CRL_MODE2;
+	GPIOA->CRH |= GPIO_CRL_CNF1_1;
+	GPIOA->CRH |= GPIO_CRL_CNF2_0;
 
 	GPIOB->CRL = 0;
-	GPIOB->CRL |= 0x33000000;	/* PB6 and PB7 are ouput (this MUST be the case BEFORE setting the alternative function */
-	GPIOB->CRL |= 0xCC000000;	/* PB6 and PB7 are alternative function */
+    GPIOB->CRL |= (GPIO_CRL_MODE0_0 | GPIO_CRL_CNF0_0);
+    GPIOB->CRL |= (GPIO_CRL_MODE6 | GPIO_CRL_CNF6_1);
+    GPIOB->CRL |= (GPIO_CRL_MODE7 | GPIO_CRL_CNF7_1);
 
-	GPIOB->CRL |= 0x01;			/* PB0 is an output pin */
-	GPIOB->CRL |= 0x04;			/* PB0 is an general purpose open drain pin */
-    GPIOB->CRH = 0x11110000;    /* PB12--PB15 push-pull outputs */
+    GPIOB->CRH = 0;
+    GPIOB->CRH |= GPIO_CRL_MODE4_0;
+    GPIOB->CRH |= GPIO_CRL_MODE5_0;
+    GPIOB->CRH |= GPIO_CRL_MODE6_0;
+    GPIOB->CRH |= GPIO_CRL_MODE7_0;
 
-    GPIOA->CRL = 0x11111111;    /* PA0--PA7 push-pull outputs */
-	GPIOA->CRH = 0;
-	GPIOA->CRH |= 0x30;			/* PA9 is an output pin */
-	GPIOA->CRH &= ~(0x300);		/* PA10 is an input pin */
-	GPIOA->CRH |= 0x80;			/* PA9 is an alternative function push pull pin */
-	GPIOA->CRH |= 0x400;		/* PA10 is an floating pin */
+    USART1->CR1 = 0;
+    USART1->CR1 |= (USART_CR1_UE | USART_CR1_RE | USART_CR1_TE);
 
-	RCC->APB1RSTR |= ( 1 << 21);/* Reset the I2C1 module */
-	RCC->APB1RSTR &= ~(1 << 21);/* Stop resetting the I2C1 module */
-
-	RCC->APB2RSTR |= (1 << 14);	/* Reset the USART1 module */
-	RCC->APB2RSTR &= ~(1 << 14);/* Stop resetting the USART1 module */
-
-    USART1->CR1 |= 0x200C;       /* Enable the transmitter, receiver and the USART */
-    USART1->BRR = 0x10;          /* TODO: validate the baud rate register. */
+    USART1->BRR = 0;
+    USART1->BRR |= 1 << USART_BRR_DIV_Mantissa_Pos;
 
     /*
      * Thigh = CCR * TPCLK1
@@ -87,24 +105,18 @@ int main(void)
      *       = 1000 (ns) / 125 (ns) + 1
      *       = 9 */
 
-    I2C1->CR2 = 0x8;             /* The peripheral clock frequency is 8 MHz */
-	I2C1->CCR &= ~(0xC000);
-	I2C1->CCR |= 0x28;			/* Generate 100 KHz serial clock speed */
-	I2C1->TRISE = 0x9;			/* Maximum rise time */
-    I2C1->CR1 |= 1;              /* Turn on the peripheral */
+    I2C1->CR2 = 0;
+    I2C1->CR2 |= I2C_CR2_FREQ_3;                /* Clock frequency. FREQ_3 is 8 MHz */
 
-    xTaskCreate(task_manager, "manager", 128, NULL, configMAX_PRIORITIES, NULL);
-    vTaskStartScheduler();
+    I2C1->CCR = 0;
+	I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;       /* Generate 100 KHz serial clock speed */
+
+    I2C1->TRISE = 0;
+	I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;  /* Maximum rise time */
+
+    I2C1->CR1 = 0;
+    I2C1->CR1 |= I2C_CR1_PE;                    /* Turn on the peripheral */
 
     return -1;
 }
 
-void task_manager()
-{
-    static volatile BaseType_t count;
-
-    for (;;)
-    {
-        ++count;
-    }
-}
