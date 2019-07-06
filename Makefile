@@ -132,12 +132,14 @@ C_SRC    += ./freertos/Source/list.c
 C_SRC    += ./freertos/Source/tasks.c
 C_SRC    += ./freertos/Source/queue.c
 C_SRC    += ./src/main.c
+C_SRC	 += ./src/server/arm_server.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
 INCLUDE  += -I./device_headers
 INCLUDE  += -I./freertos/Source/include
 INCLUDE  += -I$(FREERTOS_PORT_I)
+INCLUDE	 += -I./src/server
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)
