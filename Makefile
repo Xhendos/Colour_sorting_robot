@@ -131,7 +131,7 @@ C_SRC    += $(FREERTOS_PORT_C)
 C_SRC    += ./freertos/Source/list.c
 C_SRC    += ./freertos/Source/tasks.c
 C_SRC    += ./freertos/Source/queue.c
-CPP_SRC   = ./src/main.cpp
+C_SRC    += ./src/main.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
