@@ -109,17 +109,17 @@ int main(void)
      *       = 9 */
 
     I2C1->CR2 = 0;
-    I2C1->CR2 |= I2C_CR2_FREQ_3;                    /* Clock frequency. FREQ_3 is 8 MHz */
-    I2C1->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_BUFEN); /* Embrace I2C1 event interrupts (including RxNE and TxE interrupt) */
+    I2C1->CR2 |= I2C_CR2_FREQ_3;                        /* Clock frequency. FREQ_3 is 8 MHz */
+    I2C1->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);   /* Embrace I2C1 event interrupts (including RxNE and TxE interrupt) */
 
     I2C1->CCR = 0;
-    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;           /* Generate 100 KHz serial clock speed */
+    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;               /* Generate 100 KHz serial clock speed */
 
     I2C1->TRISE = 0;
-    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;      /* Maximum rise time */
+    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;          /* Maximum rise time */
 
     I2C1->CR1 = 0;
-    I2C1->CR1 |= I2C_CR1_PE;                        /* Turn on the peripheral */
+    I2C1->CR1 |= I2C_CR1_PE;                            /* Turn on the peripheral */
 
     return -1;
 }
