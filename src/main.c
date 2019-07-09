@@ -2,6 +2,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+
 #include "stm32f103xb.h"
 
 int main(void)
@@ -68,8 +69,8 @@ int main(void)
 
     GPIOB->CRL = 0;
     GPIOB->CRL |= (GPIO_CRL_MODE0_0 | GPIO_CRL_CNF0_0);
-    GPIOB->CRL |= (GPIO_CRL_MODE6 | GPIO_CRL_CNF6_1);
-    GPIOB->CRL |= (GPIO_CRL_MODE7 | GPIO_CRL_CNF7_1);
+    GPIOB->CRL |= (GPIO_CRL_MODE6 | GPIO_CRL_CNF6);
+    GPIOB->CRL |= (GPIO_CRL_MODE7 | GPIO_CRL_CNF7);
 
     GPIOB->CRH = 0;
     GPIOB->CRH |= GPIO_CRL_MODE4_0;
@@ -107,6 +108,7 @@ int main(void)
 
     I2C1->CR2 = 0;
     I2C1->CR2 |= I2C_CR2_FREQ_3;                /* Clock frequency. FREQ_3 is 8 MHz */
+    I2C1->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_BUFEN); /* Embrace I2C1 event interrupts (including RxNE and TxE interrupt) */
 
     I2C1->CCR = 0;
     I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;       /* Generate 100 KHz serial clock speed */
