@@ -28,6 +28,8 @@ int main(void)
     /************************************************************
     *   Pin number   *   Pin name   *      General purpose      *
     *************************************************************
+    *       18       *      PB0     *         UART_DIR          *
+    *************************************************************
     *     10--17     *   PA0--7     *         RGB0--7           *
     *************************************************************
     *     25--28     *   PB12--15   *         RGB8--11          *
@@ -107,17 +109,17 @@ int main(void)
      *       = 9 */
 
     I2C1->CR2 = 0;
-    I2C1->CR2 |= I2C_CR2_FREQ_3;                /* Clock frequency. FREQ_3 is 8 MHz */
+    I2C1->CR2 |= I2C_CR2_FREQ_3;                    /* Clock frequency. FREQ_3 is 8 MHz */
     I2C1->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_BUFEN); /* Embrace I2C1 event interrupts (including RxNE and TxE interrupt) */
 
     I2C1->CCR = 0;
-    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;       /* Generate 100 KHz serial clock speed */
+    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;           /* Generate 100 KHz serial clock speed */
 
     I2C1->TRISE = 0;
-    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;  /* Maximum rise time */
+    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;      /* Maximum rise time */
 
     I2C1->CR1 = 0;
-    I2C1->CR1 |= I2C_CR1_PE;                    /* Turn on the peripheral */
+    I2C1->CR1 |= I2C_CR1_PE;                        /* Turn on the peripheral */
 
     return -1;
 }
