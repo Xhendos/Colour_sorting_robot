@@ -35,19 +35,20 @@ typedef enum {
 
 typedef enum {
     eNoMovement = 0,
-    eRestPosition,
-    eDisplace60150,
-    eDisplace60240,
-    eDisplace15060,
-    eDisplace150240,
-    eDisplace24060,
-    eDisplace240150,
+    eDisplace,
 } eArmMovement;
+
+typedef enum {
+    eDontExecute = 0,
+    eDoExecute,
+} eExecuteMovement;
 
 typedef struct xARM_SEVER_MESSAGE {
     eSetOfArms eArms;
     eArmMovement eMovement;
-    unsigned char ucBufferMovement;
+    eExecuteMovement eExecute;
+    unsigned short int usFirstRotationInDegrees;
+    unsigned short int usSecondRotationInDegrees;
     TaskHandle_t xSenderOfMessage;
 } ArmServerMessage_t;
 
