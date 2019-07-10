@@ -1,34 +1,6 @@
 #include "arm_server.h"
 #include "ax.h"
-
-#define octoMOTOR_A_INDEX           ( 0 )
-#define octoMOTOR_B_INDEX           ( 1 )
-#define octoMOTOR_C_INDEX           ( 2 )
-#define octoMOTOR_D_INDEX           ( 3 )
-#define octoMOTOR_E_INDEX           ( 4 )
-#define octoMOTOR_F_INDEX           ( 5 )
-#define octoMOTOR_INDEX_INCREMENT   ( 1 )
-
-#define octoARM_A_INDEX             ( 0 )
-#define octoARM_B_INDEX             ( 1 )
-#define octoARM_C_INDEX             ( 2 )
-#define octoARM_D_INDEX             ( 3 )
-#define octoARM_E_INDEX             ( 4 )
-#define octoARM_F_INDEX             ( 5 )
-#define octoARM_G_INDEX             ( 6 )
-#define octoARM_H_INDEX             ( 7 )
-#define octoARM_INDEX_INCREMENT     ( 1 )
-
-#define octoARM_A_BASE              (  0 )
-#define octoARM_B_BASE              ( 10 )
-#define octoARM_C_BASE              ( 20 )
-#define octoARM_D_BASE              ( 30 )
-#define octoARM_E_BASE              ( 40 )
-#define octoARM_F_BASE              ( 50 )
-#define octoARM_G_BASE              ( 60 )
-#define octoARM_H_BASE              ( 70 )
-
-#define octoRPM                     ( 15 )
+#include "octo.h"
 
 typedef struct xMOTOR {
     unsigned char ucId;

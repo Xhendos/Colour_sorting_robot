@@ -141,6 +141,7 @@ INCLUDE  += -I./freertos/Source/include
 INCLUDE  += -I$(FREERTOS_PORT_I)
 INCLUDE	 += -I./src/server
 INCLUDE	 += -I./src/ax
+INCLUDE	 += -I./src/octo
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)
