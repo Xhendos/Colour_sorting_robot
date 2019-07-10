@@ -158,7 +158,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             }
 
             /* To make the participating servo motors reach their position simultaneously, the difference between their goal position and present position are calculated. */
-            for(UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+            for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
                 if (eBufferedMovement[uxArmIndex] != eDisplace)
                 {
@@ -195,7 +195,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             UBaseType_t uxLargestDifference = 0;
 
             /* Find the largest difference. */
-            for(UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+            for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
                 if (eBufferedMovement[uxArmIndex] != eDisplace)
                 {
@@ -219,7 +219,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             }
 
             /* The servo motor that has to turn the most degrees turns with a speed of a specified rpm like 15. The servo motors that have to turn a smaller degrees will have their movement speed compensated to a lower value. The moving speed is set via a write instruction packet. Afterwards the goal position is set via a regwrite instruction packet. The regwrite instructions are all executed at the same time via a broadcasted action instruction. */
-            for(UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+            for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
                 if (eBufferedMovement[uxArmIndex] != eDisplace)
                 {
@@ -250,7 +250,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             unsigned char ucAllServoMotorsDoneMoving = 1;
             do
             {
-                for(UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+                for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
                 {
                     if (eBufferedMovement[uxArmIndex] != eDisplace)
                     {
@@ -281,7 +281,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
 
 static void prvClearMotorParticipations()
 {
-    for(UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+    for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
     {
         for (UBaseType_t uxMotorIndex = octoMOTOR_A_INDEX; uxMotorIndex <= octoMOTOR_F_INDEX; uxMotorIndex += octoMOTOR_INDEX_INCREMENT)
         {
