@@ -29,10 +29,10 @@
 #define octoT5                      ( ePlaceholder5 )
 #define octoT6                      ( ePlaceholder6 )
 #define octoT7                      ( ePlaceholder7 )
-#define octoT8                      ( ePlaceholder8 )
-#define octoT9                      ( ePlaceholder9 )
-#define octoT10                     ( ePlaceholder10 )
-#define octoT11                     ( ePlaceholder11 )
+#define octoF0                      ( ePlaceholder8 )
+#define octoF1                      ( ePlaceholder9 )
+#define octoF2                      ( ePlaceholder10 )
+#define octoF3                      ( ePlaceholder11 )
 
 typedef enum {
     ePlaceholder0 = 0,
