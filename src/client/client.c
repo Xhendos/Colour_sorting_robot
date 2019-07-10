@@ -42,17 +42,17 @@ BaseType_t xEmptyPlaceholderColour;
             xPlaceholderColoursSecondRound[ePlaceholder] = 0;
         }
         //Terminate if there are balls with a colour that do not match any of the first reading.
-        for (ePlaceholder ePlaceholderFirst = ePlaceholder0; ePlaceholderFirst <= ePlaceholder11; ++ePlaceholderFirst)
+        for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
         {
-            xPlaceholderColourFirst = xPlaceholderColoursFirstRound[ePlaceholderFirst];
-            if (prvDoColoursMatch(xPlaceholderColourFirst, xEmptyPlaceholderColour))
+            xPlaceholderSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
+            if (prvDoColoursMatch(xPlaceholderColourSecond, xEmptyPlaceholderColour))
             {
                 continue;
             }
             xMatchingPlaceholderColour = 0;
-            for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
+            for (ePlaceholder ePlaceholderFirst = ePlaceholder0; ePlaceholderFirst <= ePlaceholder11; ++ePlaceholderFirst)
             {
-                xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
+                xPlaceholderColourFirst = xPlaceholderColoursFirstRound[ePlaceholderFirst];
                 if (prvDoColoursMatch(xPlaceholderColourFirst, xEmptyPlaceholderColour))
                 {
                     continue;
