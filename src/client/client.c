@@ -4,7 +4,16 @@
 #include "ax.h"
 #include "octo.h"
 
+typedef struct xDISPLACE_INFORMATION {
+	ePlaceholder ePlaceholderFrom;
+	ePlaceholder ePlaceholderTo;
+	unsigned char ucArm;
+	unsigned short int usFirstRotationInDegrees;
+	unsigned short int usSecondRotationInDegrees;
+} DisplaceInformation_t;
+
 static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB);
+static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] );
 
 void vTaskClient( void * pvParameters )
 {
@@ -17,6 +26,7 @@ BaseType_t xPlaceholdersFrom[4];
 BaseType_t xPlaceholdersTo[4];
 BaseType_t xPlaceholdersIndex;
 BaseType_t xEmptyPlaceholderColour;
+DisplaceInformation_t xDisplaceInformation[64]
     while (1)
     {
         //Wait for button press.
@@ -90,5 +100,10 @@ static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB)
     {
         return 0;
     }
+}
+
+static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] )
+{
+
 }
 
