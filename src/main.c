@@ -4,6 +4,7 @@
 #include "task.h"
 
 #include "stm32f103xb.h"
+#include "manager.h"
 
 int main(void)
 {
@@ -77,6 +78,8 @@ int main(void)
     GPIOB->CRL |= (GPIO_CRL_MODE7 | GPIO_CRL_CNF7);
 
     GPIOB->CRH = 0;
+    GPIOB->CRH &= ~GPIO_CRL_MODE0;
+    GPIOB->CRH |= GPIO_CRL_CNF0_1;
     GPIOB->CRH |= GPIO_CRL_MODE4_0;
     GPIOB->CRH |= GPIO_CRL_MODE5_0;
     GPIOB->CRH |= GPIO_CRL_MODE6_0;
@@ -122,6 +125,9 @@ int main(void)
 
     I2C1->CR1 = 0;
     I2C1->CR1 |= I2C_CR1_PE;                            /* Turn on the peripheral */
+
+    xTaskCreate(vTaskManager, "manager", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+    vTaskStartScheduler();
 
     return -1;
 }
