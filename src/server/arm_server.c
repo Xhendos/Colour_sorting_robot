@@ -320,8 +320,8 @@ static void prvClearMotorParticipations()
 
 static void prvSetGoalPositionAndParticipation( Motor_t * pxMotor, unsigned short int usDegreesInUnits )
 {
-    xMotor->usGoalPositionInUnits = usDegreesInUnits;
-    xMotor->ucParticipating = 1;
+    pxMotor->usGoalPositionInUnits = usDegreesInUnits;
+    pxMotor->ucParticipating = 1;
 }
 
 static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister )
