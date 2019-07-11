@@ -136,6 +136,7 @@ C_SRC	 += ./src/server/arm_server.c
 C_SRC	 += ./src/client/client.c
 C_SRC	 += ./src/manager/manager.c
 C_SRC	 += ./src/algo/algo.c
+C_SRC	 += ./src/uart/uart.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
@@ -148,6 +149,7 @@ INCLUDE	 += -I./src/octo
 INCLUDE	 += -I./src/client
 INCLUDE	 += -I./src/manager
 INCLUDE	 += -I./src/algo
+INCLUDE	 += -I./src/uart
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)
