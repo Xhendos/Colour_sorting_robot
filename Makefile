@@ -71,7 +71,7 @@ else
 endif
 CFLAGS += -Wall
 CFLAGS += -g
-CFLAGS += -Os
+CFLAGS += -O0
 CFLAGS += -fmessage-length=0 -fno-common
 CFLAGS += -ffunction-sections -fdata-sections
 #CFLAGS += --specs=nosys.specs
@@ -92,7 +92,7 @@ else
 endif
 CPPFLAGS += -Wall
 CPFLAGS += -g
-CPPFLAGS += -Os
+CPPFLAGS += -O0
 CPPFLAGS += -fmessage-length=0 -fno-common
 CPPFLAGS += -ffunction-sections -fdata-sections
 CPPFLAGS += -fno-exceptions
@@ -131,13 +131,15 @@ C_SRC    += $(FREERTOS_PORT_C)
 C_SRC    += ./freertos/Source/list.c
 C_SRC    += ./freertos/Source/tasks.c
 C_SRC    += ./freertos/Source/queue.c
-CPP_SRC   = ./src/main.cpp
+C_SRC    += ./src/i2c/i2c.c
+C_SRC    += ./src/main.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
 INCLUDE  += -I./device_headers
 INCLUDE  += -I./freertos/Source/include
 INCLUDE  += -I$(FREERTOS_PORT_I)
+INCLUDE  += -I./src/i2c
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)
