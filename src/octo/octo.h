@@ -21,6 +21,15 @@
 
 #define octoRPM                     ( 15 )
 
+#define octoA0                      ( eArm0 )
+#define octoA1                      ( eArm1 )
+#define octoA2                      ( eArm2 )
+#define octoA3                      ( eArm3 )
+#define octoA4                      ( eArm4 )
+#define octoA5                      ( eArm5 )
+#define octoA6                      ( eArm6 )
+#define octoA7                      ( eArm7 )
+
 #define octoT0                      ( ePlaceholder0 )
 #define octoT1                      ( ePlaceholder1 )
 #define octoT2                      ( ePlaceholder2 )
@@ -33,6 +42,18 @@
 #define octoF1                      ( ePlaceholder9 )
 #define octoF2                      ( ePlaceholder10 )
 #define octoF3                      ( ePlaceholder11 )
+
+typedef enum {
+    eArm0 = 0,
+    eArm1,
+    eArm2,
+    eArm3,
+    eArm4,
+    eArm5,
+    eArm6,
+    eArm7,
+    eArm8,
+} eArm;
 
 typedef enum {
     ePlaceholder0 = 0,
@@ -48,6 +69,14 @@ typedef enum {
     ePlaceholder10,
     ePlaceholder11,
 } ePlaceholder;
+
+typedef struct xDISPLACE_INFORMATION {
+	ePlaceholder ePlaceholderFrom;
+	ePlaceholder ePlaceholderTo;
+	unsigned char ucArm;
+	unsigned short int usFirstRotationInDegrees;
+	unsigned short int usSecondRotationInDegrees;
+} DisplaceInformation_t;
 
 #endif /* _OCTO_H */
 

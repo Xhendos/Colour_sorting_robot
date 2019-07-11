@@ -3,14 +3,7 @@
 #include "stm32f103xb.h"
 #include "ax.h"
 #include "octo.h"
-
-typedef struct xDISPLACE_INFORMATION {
-	ePlaceholder ePlaceholderFrom;
-	ePlaceholder ePlaceholderTo;
-	unsigned char ucArm;
-	unsigned short int usFirstRotationInDegrees;
-	unsigned short int usSecondRotationInDegrees;
-} DisplaceInformation_t;
+#include "algo.h"
 
 static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB);
 static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] );
@@ -22,10 +15,10 @@ BaseType_t xPlaceholderColoursSecondRound[12];
 BaseType_t xPlaceholderColourFirst;
 BaseType_t xPlaceholderColourSecond;
 BaseType_t xMatchingPlaceholderColour;
-BaseType_t xPlaceholdersFrom[4];
-BaseType_t xPlaceholdersTo[4];
-BaseType_t xPlaceholdersIndex;
-BaseType_t xEmptyPlaceholderColour;
+ePlaceholder ePlaceholdersFrom[4];
+ePlaceholder ePlaceholdersTo[4];
+BaseType_t xPlaceholdersIndex = 0;
+BaseType_t xEmptyPlaceholderColour = 0;
 DisplaceInformation_t xDisplaceInformation[64];
     while (1)
     {
@@ -69,8 +62,8 @@ DisplaceInformation_t xDisplaceInformation[64];
                 }
                 if (prvDoColoursMatch(xPlaceholderColourFirst, xPlaceholderColourSecond))
                 {
-                    xPlaceholdersFrom[xPlaceholdersIndex] = ePlaceholderSecond;
-                    xPlaceholdersTo[xPlaceholdersIndex] = ePlaceholderFirst;
+                    ePlaceholdersFrom[xPlaceholdersIndex] = ePlaceholderSecond;
+                    ePlaceholdersTo[xPlaceholdersIndex] = ePlaceholderFirst;
                     ++xPlaceholdersIndex;
                     xMatchingPlaceholderColour = 1;
                     break;
@@ -82,6 +75,7 @@ DisplaceInformation_t xDisplaceInformation[64];
             }
         }
         //Determine edges based on first and second reading.
+        prvGetDisplaceInformation( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformation );
         //While all edges have not been processed:
             //Go through all edges and buffer as many movements as possible in a round.
             //Execute round.
@@ -104,6 +98,14 @@ static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB)
 
 static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] )
 {
-
+    ePlaceholdersFrom[0] = octoT0;
+    ePlaceholdersFrom[1] = octoT2;
+    ePlaceholdersFrom[2] = octoT4;
+    ePlaceholdersFrom[3] = octoT6;
+    ePlaceholdersTo[0] = octoF0;
+    ePlaceholdersTo[1] = octoF1;
+    ePlaceholdersTo[2] = octoF2;
+    ePlaceholdersTo[3] = octoF3;
+    vAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformation );
 }
 

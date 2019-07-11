@@ -71,7 +71,7 @@ else
 endif
 CFLAGS += -Wall
 CFLAGS += -g
-CFLAGS += -Os
+CFLAGS += -O0
 CFLAGS += -fmessage-length=0 -fno-common
 CFLAGS += -ffunction-sections -fdata-sections
 #CFLAGS += --specs=nosys.specs
@@ -92,7 +92,7 @@ else
 endif
 CPPFLAGS += -Wall
 CPFLAGS += -g
-CPPFLAGS += -Os
+CPPFLAGS += -O0
 CPPFLAGS += -fmessage-length=0 -fno-common
 CPPFLAGS += -ffunction-sections -fdata-sections
 CPPFLAGS += -fno-exceptions
@@ -135,6 +135,7 @@ C_SRC    += ./src/main.c
 C_SRC	 += ./src/server/arm_server.c
 C_SRC	 += ./src/client/client.c
 C_SRC	 += ./src/manager/manager.c
+C_SRC	 += ./src/algo/algo.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
@@ -146,6 +147,7 @@ INCLUDE	 += -I./src/ax
 INCLUDE	 += -I./src/octo
 INCLUDE	 += -I./src/client
 INCLUDE	 += -I./src/manager
+INCLUDE	 += -I./src/algo
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)
