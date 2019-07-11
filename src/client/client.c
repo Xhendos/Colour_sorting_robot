@@ -26,7 +26,7 @@ BaseType_t xPlaceholdersFrom[4];
 BaseType_t xPlaceholdersTo[4];
 BaseType_t xPlaceholdersIndex;
 BaseType_t xEmptyPlaceholderColour;
-DisplaceInformation_t xDisplaceInformation[64]
+DisplaceInformation_t xDisplaceInformation[64];
     while (1)
     {
         //Wait for button press.
@@ -54,7 +54,7 @@ DisplaceInformation_t xDisplaceInformation[64]
         //Terminate if there are balls with a colour that do not match any of the first reading.
         for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
         {
-            xPlaceholderSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
+            xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
             if (prvDoColoursMatch(xPlaceholderColourSecond, xEmptyPlaceholderColour))
             {
                 continue;
