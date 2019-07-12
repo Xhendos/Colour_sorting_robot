@@ -3,6 +3,10 @@
 #include "uart.h"
 #include "stm32f103xb.h"
 #include "octo.h"
+#include "ax.h"
+
+TaskHandle_t xUartTask;
+QueueHandle_t xUartMessageQueue;
 
 void vTaskUart( void * pvParameters )
 {
@@ -11,12 +15,18 @@ InstructionPacket_t xInstructionPacket;
 unsigned char tx[16];
 unsigned char rx[16];
 
+    xUartMessageQueue = xQueueCreate(uartSERVER_MESSAGE_QUEUE_SIZE, sizeof(UartMessage_t));
+
+    if( xUartMessageQueue == NULL )
+    {
+        /* Message queue did not get created. */
+    }
+
     tx[0] = 0xFF;
     tx[1] = 0xFF;
 
     while (1)
     {
-        //Read instruction packet from queue.
         if (xQueueReceive(xUartMessageQueue, &xMessage, portMAX_DELAY) == pdFALSE)
         {
             /* Failed retrieving item from queue. */
@@ -24,7 +34,6 @@ unsigned char rx[16];
 
         xInstructionPacket = xMessage.xInstructionPacket;
 
-        //Dissect to bytes.
         tx[2] = xInstructionPacket.ucId;
 
         switch (xInstructionPacket.eInstructionType)
@@ -69,23 +78,20 @@ unsigned char rx[16];
                 configASSERT( xInstructionPacket.eInstructionType );
         }
 
-        ////Send bytes.
-        //data direction as output.
         GPIOB->BSRR = GPIO_BSRR_BS0;
         for (unsigned char ucI = 0; ucI < (4 + tx[3]); ++ucI)
         {
-            //enable txeie.
-            USART1->CR1 |= USART_CR1_TXEIE;
-            //put byte in dr.
-            USART1->DR = tx[ucI];
-            //wait for notify from interrupt handler.
+            /* TXEIE has no delay between bytes. TCIE will have some delay. Enabling TXEIE will result in an immediate interrupt, that is way the data is put in first. But there shouldn't be any delay between putting the data in and enabling TXEIE.*/
+            taskENTER_CRITICAL();
+            {
+                USART1->DR = tx[ucI];
+                USART1->CR1 |= USART_CR1_TXEIE;
+            }
+            taskEXIT_CRITICAL();
             ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         }
-        //data direction as input.
         GPIOB->BSRR = GPIO_BSRR_BR0;
         USART1->CR1 |= USART_CR1_RXNEIE;
-        //Wait on bytes from status packet.
-        //if read type handle like 6 + usByteSize(xInstructionPacket.eRegister) else handle like 6 byte status packet.
         if (xInstructionPacket.eInstructionType == eRead)
         {
             for (unsigned char ucI = 0; ucI < 6 + tx[6]; ++ucI)
@@ -119,7 +125,6 @@ unsigned char rx[16];
             }
         }
 
-        //Return value if instruction packet was of type Read.
         xQueueSend(xMessage.xQueueToSendResponseTo, &usResponse, portMAX_DELAY);
     }
 }

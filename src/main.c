@@ -5,6 +5,7 @@
 
 #include "stm32f103xb.h"
 #include "manager.h"
+#include "uart.h"
 
 int main(void)
 {
@@ -125,6 +126,10 @@ int main(void)
 
     I2C1->CR1 = 0;
     I2C1->CR1 |= I2C_CR1_PE;                            /* Turn on the peripheral */
+
+	NVIC_SetPriority(USART1_IRQn, 0);
+	NVIC_ClearPendingIRQ(USART1_IRQn);
+    NVIC_EnableIRQ(USART1_IRQn);
 
     xTaskCreate(vTaskManager, "manager", 128, NULL, configMAX_PRIORITIES - 1, NULL);
     vTaskStartScheduler();

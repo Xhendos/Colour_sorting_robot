@@ -1,6 +1,7 @@
 #include "arm_server.h"
 #include "ax.h"
 #include "octo.h"
+#include "uart.h"
 
 typedef struct xMOTOR {
     unsigned char ucId;
@@ -38,7 +39,9 @@ static Motor_t xMotors[8][6] = {
     { {71}, {72}, {73}, {74}, {75}, {76} },
 };
 
+TaskHandle_t xArmServerTask;
 QueueHandle_t xArmServerMessageQueue;
+static QueueHandle_t xQueueForUartResponse;
 
 void vTaskArmServer( void * pvParameters )
 {
@@ -52,6 +55,13 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
     if ( xArmServerMessageQueue == NULL )
     {
         /* Message queue did not get created. */
+    }
+
+    xQueueForUartResponse = xQueueCreate(1, sizeof(unsigned short int));
+
+    if ( xQueueForUartResponse == NULL )
+    {
+        /* Queue for uart response did not get created. */
     }
 
     while (1)
@@ -298,7 +308,19 @@ static void prvSetGoalPositionAndParticipation( Motor_t * pxMotor, unsigned shor
 
 static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister )
 {
-    return 0;
+    unsigned short int ucResponse;
+    UartMessage_t xUartMessage;
+
+    xUartMessage.xInstructionPacket.eInstructionType = eRead;
+    xUartMessage.xInstructionPacket.ucId = pxMotor->ucId;
+    xUartMessage.xInstructionPacket.eRegister = eRegister;
+    xUartMessage.xInstructionPacket.usParam = ucByteSize(eRegister);
+    xUartMessage.xQueueToSendResponseTo = xQueueForUartResponse;
+
+    xQueueSend(xUartMessageQueue, &xUartMessage, portMAX_DELAY);
+    xQueueReceive(xQueueForUartResponse, &ucResponse, portMAX_DELAY);
+
+    return ucResponse;
 }
 
 static void prvWrite( Motor_t * pxMotor, eRegister eRegister, unsigned short int usValue )

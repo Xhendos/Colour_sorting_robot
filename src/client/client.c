@@ -4,6 +4,9 @@
 #include "ax.h"
 #include "octo.h"
 #include "algo.h"
+#include "arm_server.h"
+
+TaskHandle_t xClientTask;
 
 static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB);
 static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] );
@@ -20,11 +23,12 @@ ePlaceholder ePlaceholdersTo[4];
 BaseType_t xPlaceholdersIndex = 0;
 BaseType_t xEmptyPlaceholderColour = 0;
 DisplaceInformation_t xDisplaceInformation[64];
+
     while (1)
     {
         //Wait for button press.
-        while (GPIOB->IDR & GPIO_IDR_IDR8);
-        while (!(GPIOB->IDR & GPIO_IDR_IDR8));
+        //while (GPIOB->IDR & GPIO_IDR_IDR8);
+        //while (!(GPIOB->IDR & GPIO_IDR_IDR8));
         //Scan each placeholder for colours.
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
@@ -34,8 +38,8 @@ DisplaceInformation_t xDisplaceInformation[64];
             xPlaceholderColoursFirstRound[ePlaceholder] = 0;
         }
         //Wait for button press.
-        while (GPIOB->IDR & GPIO_IDR_IDR8);
-        while (!(GPIOB->IDR & GPIO_IDR_IDR8));
+        //while (GPIOB->IDR & GPIO_IDR_IDR8);
+        //while (!(GPIOB->IDR & GPIO_IDR_IDR8));
         //Scan each placeholder for colours.
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
@@ -78,6 +82,15 @@ DisplaceInformation_t xDisplaceInformation[64];
         prvGetDisplaceInformation( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformation );
         //While all edges have not been processed:
             //Go through all edges and buffer as many movements as possible in a round.
+            ArmServerMessage_t xArmServerMessage = {
+                ARM4,
+                eDisplace,
+                eDoExecute,
+                60,
+                150,
+                xClientTask,
+            };
+            xQueueSend(xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY);
             //Execute round.
             //Check if balls have reached their destination placeholders, otherwise halt system or wait until user has manually placed runaway balls to their destination placeholders.
         //Done.

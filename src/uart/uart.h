@@ -2,8 +2,11 @@
 #define _UART_H
 
 #include "FreeRTOS.h"
+#include "task.h"
 #include "queue.h"
 #include "ax.h"
+
+#define uartSERVER_MESSAGE_QUEUE_SIZE   ( 1 )
 
 typedef struct xINSTRUCTION_PACKET {
     eInstructionType eInstructionType;
@@ -17,7 +20,8 @@ typedef struct xUART_MESSAGE {
     QueueHandle_t xQueueToSendResponseTo;
 } UartMessage_t;
 
-QueueHandle_t xUartMessageQueue;
+extern TaskHandle_t xUartTask;
+extern QueueHandle_t xUartMessageQueue;
 
 void vTaskUart( void * pvParameters );
 
