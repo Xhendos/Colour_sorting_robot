@@ -1,10 +1,12 @@
 #ifndef _AX_H
 #define _AX_H
 
-#define axDEGREES_UNIT        (0.29)
-#define axRPM_UNIT            (0.111)
-#define axDEGREES_TO_UNITS(x) ((unsigned short int)(x / axDEGREES_UNIT))
-#define axRPM_TO_UNITS(x)     ((unsigned short int)(x / axRPM_UNIT))
+#define axBROADCAST_ID          ( 254 )
+
+#define axDEGREES_UNIT          ( 0.29 )
+#define axRPM_UNIT              ( 0.111 )
+#define axDEGREES_TO_UNITS(x)   ( (unsigned short int)(x / axDEGREES_UNIT) )
+#define axRPM_TO_UNITS(x)       ( (unsigned short int)(x / axRPM_UNIT) )
 
 #define axINSTRUCTION_PACKET_LENGTH_CONSTANT    ( 2 )
 

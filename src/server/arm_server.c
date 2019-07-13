@@ -23,9 +23,9 @@ typedef struct xARM {
 
 static void prvClearMotorParticipations( void );
 static void prvSetGoalPositionAndParticipation( Motor_t * pxMotor, unsigned short int usDegrees );
-static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister );
-static void prvWrite( Motor_t * pxMotor, eRegister eRegister, unsigned short int usValue );
-static void prvRegWrite( Motor_t * pxMotor, eRegister eRegister, unsigned short int usValue );
+static unsigned short int prvRead( unsigned char ucId, eRegister eRegister );
+static void prvWrite( unsigned char ucId, eRegister eRegister, unsigned short int usValue );
+static void prvRegWrite( unsigned char ucId, eRegister eRegister, unsigned short int usValue );
 static void prvAction();
 
 static Motor_t xMotors[8][6] = {
@@ -62,6 +62,33 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
     if ( xQueueForUartResponse == NULL )
     {
         /* Queue for uart response did not get created. */
+    }
+
+    /* Configure servo motors. This does not put any arm in a position. Putting an arm into a position or making it perform a movement is done by messaging the arm server. Putting an arm in rest position is not part of configuring servo motors. An arm can be put in rest position by sending the arm server a message. */
+    prvWrite(axBROADCAST_ID, eStatusReturnLevel, 2);
+    prvWrite(axBROADCAST_ID, eReturnDelayTime, 50);
+    for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+    {
+        if (uxArmIndex != 4)
+        {
+            continue;
+        }
+
+        for (UBaseType_t uxMotorIndex = octoMOTOR_A_INDEX; uxMotorIndex <= octoMOTOR_F_INDEX; uxMotorIndex += octoMOTOR_INDEX_INCREMENT)
+        {
+            Motor_t * pxMotor = &xMotors[uxArmIndex][uxMotorIndex];
+
+            prvWrite(pxMotor->ucId, eTorqueEnable, 0);
+            prvWrite(pxMotor->ucId, eCwAngleLimit, axDEGREES_TO_UNITS(60));
+            prvWrite(pxMotor->ucId, eCcwAngleLimit, axDEGREES_TO_UNITS(240));
+            prvWrite(pxMotor->ucId, eMaxTorque, 0x03FF);
+            prvWrite(pxMotor->ucId, eAlarmLed, 0);
+            prvWrite(pxMotor->ucId, eMovingSpeed, axRPM_TO_UNITS(octoRPM));
+            prvWrite(pxMotor->ucId, eShutdown, 0);
+            prvWrite(pxMotor->ucId, eTorqueEnable, 1);
+        }
+
+        uxArmIndex = 3;
     }
 
     while (1)
@@ -184,7 +211,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                         continue;
                     }
 
-                    pxMotor->usPresentPositionInUnits = prvRead(pxMotor, ePresentPosition);
+                    pxMotor->usPresentPositionInUnits = prvRead(pxMotor->ucId, ePresentPosition);
 
                     /* abs(). */
                     if (pxMotor->usPresentPositionInUnits > pxMotor->usGoalPositionInUnits)
@@ -249,8 +276,8 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
 
                     pxMotor->usMovingSpeedInUnits = axRPM_TO_UNITS(octoRPM) * fMovingSpeedRatio;
 
-                    prvWrite(pxMotor, eMovingSpeed, pxMotor->usMovingSpeedInUnits);
-                    prvRegWrite(pxMotor, eGoalPosition, pxMotor->usGoalPositionInUnits);
+                    prvWrite(pxMotor->ucId, eMovingSpeed, pxMotor->usMovingSpeedInUnits);
+                    prvRegWrite(pxMotor->ucId, eGoalPosition, pxMotor->usGoalPositionInUnits);
                 }
             }
 
@@ -276,7 +303,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                             continue;
                         }
 
-                        unsigned char ucIsMoving = prvRead(pxMotor, eMoving);
+                        unsigned char ucIsMoving = prvRead(pxMotor->ucId, eMoving);
 
                         if (ucIsMoving)
                         {
@@ -306,13 +333,13 @@ static void prvSetGoalPositionAndParticipation( Motor_t * pxMotor, unsigned shor
     pxMotor->ucParticipating = 1;
 }
 
-static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister )
+static unsigned short int prvRead( unsigned char ucId, eRegister eRegister )
 {
     unsigned short int usResponse;
     UartMessage_t xUartMessage;
 
     xUartMessage.xInstructionPacket.eInstructionType = eRead;
-    xUartMessage.xInstructionPacket.ucId = pxMotor->ucId;
+    xUartMessage.xInstructionPacket.ucId = ucId;
     xUartMessage.xInstructionPacket.eRegister = eRegister;
     xUartMessage.xInstructionPacket.usParam = ucByteSize(eRegister);
     xUartMessage.xQueueToSendResponseTo = xQueueForUartResponse;
@@ -323,12 +350,22 @@ static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister )
     return usResponse;
 }
 
-static void prvWrite( Motor_t * pxMotor, eRegister eRegister, unsigned short int usValue )
+static void prvWrite( unsigned char ucId, eRegister eRegister, unsigned short int usValue )
 {
+    unsigned short int usResponse;
+    UartMessage_t xUartMessage;
 
+    xUartMessage.xInstructionPacket.eInstructionType = eWrite;
+    xUartMessage.xInstructionPacket.ucId = ucId;
+    xUartMessage.xInstructionPacket.eRegister = eRegister;
+    xUartMessage.xInstructionPacket.usParam = usValue;
+    xUartMessage.xQueueToSendResponseTo = xQueueForUartResponse;
+
+    xQueueSend(xUartMessageQueue, &xUartMessage, portMAX_DELAY);
+    xQueueReceive(xQueueForUartResponse, &usResponse, portMAX_DELAY);
 }
 
-static void prvRegWrite( Motor_t * pxMotor, eRegister eRegister, unsigned short int usValue )
+static void prvRegWrite( unsigned char ucId, eRegister eRegister, unsigned short int usValue )
 {
 
 }

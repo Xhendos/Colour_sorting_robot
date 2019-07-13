@@ -92,6 +92,11 @@ InstructionPacket_t xInstructionPacket;
             ucRxBytes = 6;
         }
 
+        if (xInstructionPacket.ucId == axBROADCAST_ID)
+        {
+            ucRxBytes = 0;
+        }
+
         /* Set direction to TX. Enable TXE interrupts to get into the interrupt handler. Wait on a notify from the interrupt handler when it is done receiving the status packet. */
         GPIOB->BSRR = GPIO_BSRR_BS0;
         USART1->CR1 |= USART_CR1_TXEIE;
@@ -130,9 +135,18 @@ void USART1_IRQ_handler()
     if (uxTcie && uxTc)
     {
         GPIOB->BSRR = GPIO_BSRR_BR0;
-        USART1->CR1 |= USART_CR1_RXNEIE;
-        USART1->CR1 &= ~(USART_CR1_TCIE);
         index = 0;
+
+        if (ucRxBytes == 0)
+        {
+            vTaskNotifyGiveFromISR(xUartTask, NULL);
+        }
+        else
+        {
+            USART1->CR1 |= USART_CR1_RXNEIE;
+        }
+
+        USART1->CR1 &= ~(USART_CR1_TCIE);
     }
 
     if (uxTxeie && uxTxe)
