@@ -25,7 +25,7 @@ static QueueHandle_t xI2cFromIsr;
 
 void I2C1_EV_IRQ_handler(void)
 {
-	if(I2C1->SR1 & I2C_SR1_SB)		/* (0x01) Start bit has been send */
+    if(I2C1->SR1 & I2C_SR1_SB)		/* (0x01) Start bit has been send */
 	{
         if(!xI2cPeripheralBusy)
         {
@@ -57,10 +57,18 @@ void I2C1_EV_IRQ_handler(void)
             if(xI2cIsrMessage.ucRead == 1)
             {
                 I2C1->CR1 &= ~(I2C_CR1_ACK);
-                GPIOB->CRL &= ~(GPIO_CRL_MODE1_1);      /* Errata */
+                GPIOB->CRL &= ~(GPIO_CRL_MODE6_1);      /* Errata */
             } else if(xI2cIsrMessage.ucRead == 2)
             {
+                GPIOB->CRL &= ~(GPIO_CRL_MODE6_1);      /* Change PB6 from I2C_CLK to I/O pin (errata 2.13.1) */
+                I2C1->CR1 |= (I2C_CR1_POS);             /* Generate a NACK on the next receiving byte */
                 
+                I2C1->SR1;                              /* Acknowledge the interrupt */
+                I2C1->SR2;  
+            
+                I2C1->CR1 &= ~(I2C_CR1_ACK);            /* Do not send an acknowledgement */
+                GPIOB->CRL |= (GPIO_CRL_MODE6_1);       /* Change PB6 from I/O pin to I2C_CLK (errata 2.13.1) */
+                return;
             }
         } else if(!xI2cIsrMessage.ucWriteFinished)
         {           
@@ -81,20 +89,40 @@ void I2C1_EV_IRQ_handler(void)
 
     if(I2C1->SR1 & I2C_SR1_RXNE)	/* Receive data register not empty */
 	{
-        I2C1->SR1;                  /* Dummy read to clear the BTF (byte transfer finished) flag */
-        xI2cIsrMessage.pucReadBytes[0] = I2C1->DR;  /* Must be the next action after the dummy SR1 read */
+        if(xI2cIsrMessage.ucRead == 1)
+        {
+            I2C1->SR1;                  /* Dummy read to clear the BTF (byte transfer finished) flag */
+            xI2cIsrMessage.pucReadBytes[0] = I2C1->DR;  /* Must be the next action after the dummy SR1 read */
                
-        while(I2C1->CR1 & I2C_CR1_STOP);
-        I2C1->CR1 |= I2C_CR1_ACK;       /* Set acknowledgement after a byte is received on again */ 
-        GPIOB->CRL |= (GPIO_CRL_MODE1_1);
+            while(I2C1->CR1 & I2C_CR1_STOP);
+            I2C1->CR1 |= I2C_CR1_ACK;       /* Set acknowledgement after a byte is received on again */ 
+            GPIOB->CRL |= (GPIO_CRL_MODE6_1);
 
-        xI2cPeripheralBusy = 0;         /* We finished this request and are free to accept a new one */
-        xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);   /* Delete the peeked request, basically acknowledge it */
-        xQueueSendFromISR(xI2cFromIsr, &xI2cIsrMessage, NULL);      /* Send the response to the caller */
+            xI2cPeripheralBusy = 0;         /* We finished this request and are free to accept a new one */
+            xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);   /* Delete the peeked request, basically acknowledge it */
+            xQueueSendFromISR(xI2cFromIsr, &xI2cIsrMessage, NULL);      /* Send the response to the caller */
 
-        I2C1->SR1 &= ~(I2C_SR1_RXNE);   /* Acknowledge the interrupt */
-	    I2C1->DR;
-        return;
+            I2C1->SR1 &= ~(I2C_SR1_RXNE);   /* Acknowledge the interrupt */
+	        I2C1->DR;
+            return;
+        } else if (xI2cIsrMessage.ucRead == 2)
+        {
+            I2C1->CR1 |= (I2C_CR1_STOP);
+            xI2cIsrMessage.pucReadBytes[0] = I2C1->DR;
+            //xI2cIsrMessage.pucReadBytes[1] = I2C1->DR;
+            
+            while(I2C1->CR1 & I2C_CR1_STOP);
+            I2C1->CR1 &= ~(I2C_CR1_POS);
+            I2C1->CR1 |= (I2C_CR1_ACK);
+            
+            xI2cIsrMessage.pucReadBytes[1] = I2C1->DR;
+               
+            xI2cPeripheralBusy = 0;
+            xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);
+            
+            xQueueSendFromISR(xI2cFromIsr, &xI2cIsrMessage, NULL);           
+            
+        }   
     }
 
 	if(I2C1->SR1 & I2C_SR1_BTF)		/* (0x04) Byte transfer is finished */
@@ -102,6 +130,8 @@ void I2C1_EV_IRQ_handler(void)
         if(xI2cIsrMessage.ucWriteFinished)
         {
             /* This should never be reached, but handled by RxNE interrupt */
+            volatile int lDummy = 0;
+            lDummy += 1;
         } else if(!xI2cIsrMessage.ucWriteFinished)
         {
             if(xI2cIsrMessage.ucWriteBytesLength)
@@ -150,15 +180,20 @@ volatile uint16_t usVar;
 
     xWhoAmI.ucAddress = 0x29;
     xWhoAmI.pucWriteBytes = ucI2cWrite;
-    xWhoAmI.ucWriteBytesLength = 2;
+    xWhoAmI.ucWriteBytesLength = 1;
     xWhoAmI.ucWriteFinished = 0;
-    xWhoAmI.ucRead = 0;
-    xWhoAmI.pucReadBytes = ucI2cResult;
+    xWhoAmI.ucRead = 1;
+    xWhoAmI.pucReadBytes = ucI2cResult; 
 
-    ucI2cWrite[0] = 0x80 | 0x00;
-    ucI2cWrite[1] = 0x03;
+    /* Write to control register 1 */
+    //ucI2cWrite[0] = 0x80 | 0x00;
+    //ucI2cWrite[1] = 0x03;
+
+    /* Write to control register */
    
-    
+    ucI2cWrite[0] = 0x80 | 0x12;
+    //ucI2cWrite[0] = 0x80 | 0x14;  
+    //ucI2cWrite[0] = 0x80 | 0x16;
     while(1)
     {
         xWhoAmI.ucWriteFinished = 0; 
