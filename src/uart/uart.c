@@ -97,6 +97,8 @@ InstructionPacket_t xInstructionPacket;
             ucRxBytes = 0;
         }
 
+        vTaskDelay(1);
+
         /* Set direction to TX. Enable TXE interrupts to get into the interrupt handler. Wait on a notify from the interrupt handler when it is done receiving the status packet. */
         GPIOB->BSRR = GPIO_BSRR_BS0;
         USART1->CR1 |= USART_CR1_TXEIE;
