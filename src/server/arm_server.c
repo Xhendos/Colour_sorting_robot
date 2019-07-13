@@ -308,7 +308,7 @@ static void prvSetGoalPositionAndParticipation( Motor_t * pxMotor, unsigned shor
 
 static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister )
 {
-    unsigned short int ucResponse;
+    unsigned short int usResponse;
     UartMessage_t xUartMessage;
 
     xUartMessage.xInstructionPacket.eInstructionType = eRead;
@@ -318,9 +318,9 @@ static unsigned short int prvRead( Motor_t * pxMotor, eRegister eRegister )
     xUartMessage.xQueueToSendResponseTo = xQueueForUartResponse;
 
     xQueueSend(xUartMessageQueue, &xUartMessage, portMAX_DELAY);
-    xQueueReceive(xQueueForUartResponse, &ucResponse, portMAX_DELAY);
+    xQueueReceive(xQueueForUartResponse, &usResponse, portMAX_DELAY);
 
-    return ucResponse;
+    return usResponse;
 }
 
 static void prvWrite( Motor_t * pxMotor, eRegister eRegister, unsigned short int usValue )
