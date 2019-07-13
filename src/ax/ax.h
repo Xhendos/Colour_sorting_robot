@@ -9,15 +9,15 @@
 #define axINSTRUCTION_PACKET_LENGTH_CONSTANT    ( 2 )
 
 typedef enum {
-	ePing = 1,
+	//ePing = 1,
 	eRead = 2,
 	eWrite = 3,
 	eRegWrite = 4,
 	eAction = 5,
-	eFactoryReset = 6,
-	eReboot = 8,
-	eSyncWrite = 131,
-	eBulkRead = 146,
+	//eFactoryReset = 6,
+	//eReboot = 8,
+	//eSyncWrite = 131,
+	//eBulkRead = 146,
 } eInstructionType;
 
 typedef enum {

@@ -137,7 +137,6 @@ C_SRC	 += ./src/client/client.c
 C_SRC	 += ./src/manager/manager.c
 C_SRC	 += ./src/algo/algo.c
 C_SRC	 += ./src/uart/uart.c
-C_SRC	 += ./src/uart/uart_handler.c
 C_SRC	 += ./src/ax/ax.c
 
 INCLUDE  += -I./
