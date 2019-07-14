@@ -9,7 +9,6 @@
 TaskHandle_t xClientTask;
 
 static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB);
-static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] );
 
 void vTaskClient( void * pvParameters )
 {
@@ -22,7 +21,7 @@ ePlaceholder ePlaceholdersFrom[4];
 ePlaceholder ePlaceholdersTo[4];
 BaseType_t xPlaceholdersIndex = 0;
 BaseType_t xEmptyPlaceholderColour = 0;
-DisplaceInformation_t xDisplaceInformation[64];
+DisplaceInformation_t xDisplaceInformations[64];
 
     while (1)
     {
@@ -78,23 +77,81 @@ DisplaceInformation_t xDisplaceInformation[64];
                 //Terminate.
             }
         }
-        //Determine edges based on first and second reading.
-        prvGetDisplaceInformation( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformation );
-        //While all edges have not been processed:
-            //Go through all edges and buffer as many movements as possible in a round.
-            ArmServerMessage_t xArmServerMessage = {
-                ARM4,
-                eDisplace,
-                eDoExecute,
-                60,
-                150,
-                xClientTask,
-            };
-            xQueueSend(xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY);
-            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-            //Execute round.
-            //Check if balls have reached their destination placeholders, otherwise halt system or wait until user has manually placed runaway balls to their destination placeholders.
-        //Done.
+
+        //Go through all edges and buffer as many movements as possible in a round.
+        ePlaceholdersFrom[0] = octoT4;
+        ePlaceholdersFrom[1] = octoT2;
+        ePlaceholdersFrom[2] = octoT2;
+        ePlaceholdersFrom[3] = octoT2;
+        ePlaceholdersTo[0] = octoT5;
+        ePlaceholdersTo[1] = octoT2;
+        ePlaceholdersTo[2] = octoT2;
+        ePlaceholdersTo[3] = octoT2;
+
+        UBaseType_t count = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
+        UBaseType_t uxAllowed;
+        ArmServerMessage_t xArmServerMessage;
+        UBaseType_t uxFlagCount = 0;
+        DisplaceInformation_t * pxDisplaceInformation;
+        DisplaceInformation_t * pxPreviousDisplaceInformation;
+        unsigned char ucDisplaceInformationFlags[count];
+
+        do
+        {
+            for (uint8_t n = 0; n < count; ++n)
+            {
+                pxDisplaceInformation = &xDisplaceInformations[n];
+
+                if (ucDisplaceInformationFlags[n])
+                {
+                    continue;
+                }
+
+                uxAllowed = 1;
+
+                for (uint8_t nn = 0; nn < n; ++nn)
+                {
+                    pxPreviousDisplaceInformation = &xDisplaceInformations[nn];
+
+                    if (ucDisplaceInformationFlags[n])
+                    {
+                        continue;
+                    }
+
+                    if (pxDisplaceInformation->ePlaceholderFrom == pxPreviousDisplaceInformation->ePlaceholderFrom
+                        || pxDisplaceInformation->ePlaceholderFrom == pxPreviousDisplaceInformation->ePlaceholderTo
+                        || pxDisplaceInformation->ePlaceholderTo == pxPreviousDisplaceInformation->ePlaceholderFrom
+                        || pxDisplaceInformation->ePlaceholderTo == pxPreviousDisplaceInformation->ePlaceholderTo)
+                    {
+                        uxAllowed = 0;
+                        break;
+                    }
+                }
+
+                if (!uxAllowed)
+                {
+                    continue;
+                }
+
+                xArmServerMessage.eArms = 1 << pxDisplaceInformation->ucArm;
+                xArmServerMessage.eMovement = eDisplace;
+                xArmServerMessage.eExecute = eDontExecute;
+                xArmServerMessage.usFirstRotationInDegrees = pxDisplaceInformation->usFirstRotationInDegrees;
+                xArmServerMessage.usSecondRotationInDegrees = pxDisplaceInformation->usSecondRotationInDegrees;
+                xArmServerMessage.xSenderOfMessage = xClientTask;
+                xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+
+                /* Although the movement isn't performed yet by the arm, this still is a viable place to increment the flag count. */
+                ucDisplaceInformationFlags[n] = 1;
+                ++uxFlagCount;
+            }
+
+            xArmServerMessage.eArms = 0;
+            xArmServerMessage.eExecute = eDoExecute;
+            xArmServerMessage.eMovement = eNoMovement;
+            xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+            ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        } while (uxFlagCount != count);
     }
 }
 
@@ -108,18 +165,5 @@ static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB)
     {
         return 0;
     }
-}
-
-static void prvGetDisplaceInformation( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t xDisplaceInformation[64] )
-{
-    ePlaceholdersFrom[0] = octoT0;
-    ePlaceholdersFrom[1] = octoT2;
-    ePlaceholdersFrom[2] = octoT4;
-    ePlaceholdersFrom[3] = octoT6;
-    ePlaceholdersTo[0] = octoF0;
-    ePlaceholdersTo[1] = octoF1;
-    ePlaceholdersTo[2] = octoF2;
-    ePlaceholdersTo[3] = octoF3;
-    vAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformation );
 }
 

@@ -49,7 +49,7 @@ static int skip, MAXROUNDS = 0;
 static unsigned short ucDisplaceInformationIndex;
 static DisplaceInformation_t *  pxDisplaceInformation;
 
-void vAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t pxDisplaceInformations[64] )
+unsigned short usAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t pxDisplaceInformations[64] )
 {
     int temp[MAX_BALL];
     int next[MAX_BALL];
@@ -102,6 +102,8 @@ void vAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlac
             MAXROUNDS++;
         }
     } while(check != 1 && MAXROUNDS <= 5);
+
+    return ucDisplaceInformationIndex;
 }
 
 static int lCheckFinished(ePlaceholder * eCheckArray)

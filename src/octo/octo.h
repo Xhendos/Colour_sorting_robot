@@ -19,6 +19,9 @@
 #define octoARM_H_INDEX             ( 7 )
 #define octoARM_INDEX_INCREMENT     ( 1 )
 
+#define octoARM_A_INDEX             ( octoARM_E_INDEX )
+#define octoARM_H_INDEX             ( octoARM_E_INDEX )
+
 #define octoRPM                     ( 15 )
 
 #define octoA0                      ( eArm0 )
