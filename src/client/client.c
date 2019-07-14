@@ -91,6 +91,7 @@ DisplaceInformation_t xDisplaceInformation[64];
                 xClientTask,
             };
             xQueueSend(xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY);
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
             //Execute round.
             //Check if balls have reached their destination placeholders, otherwise halt system or wait until user has manually placed runaway balls to their destination placeholders.
         //Done.

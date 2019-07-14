@@ -17,6 +17,7 @@ void vTaskUart( void * pvParameters )
 {
 UartMessage_t xMessage;
 InstructionPacket_t xInstructionPacket;
+UBaseType_t uxResponse;
 
     xUartMessageQueue = xQueueCreate(uartSERVER_MESSAGE_QUEUE_SIZE, sizeof(UartMessage_t));
 
@@ -97,26 +98,37 @@ InstructionPacket_t xInstructionPacket;
             ucRxBytes = 0;
         }
 
-        vTaskDelay(1);
+        /* This piece of code gives different results between optimization options -O0 and -Os. With optimization, the delays can be removed and the program will still work. Without optimization, a delay must be used. The delay should come from vTaskDelay(). A same or higher delay created by a for-loop does not work. Placing the delay after getting a notify from the usart interrupt handler also doesn't work, this time for vTaskDelay() and for-loop. A test has also been done with disabled interrupts and polling the status register of the usart module and a delay was still needed. A final test has been done with the polling method and without FreeRTOS and that didn't need any delay. */
+#ifdef octoNO_OPTIMIZATION
+        volatile int delay1 = 1;
+        volatile int delay2 = 100000;
+        if (delay1)
+        {
+            vTaskDelay(delay1);
+        }
+        else
+        {
+            for (int i = 0; i < delay2; ++i);
+        }
+#endif /* octoNO_OPTIMIZATION */
 
         /* Set direction to TX. Enable TXE interrupts to get into the interrupt handler. Wait on a notify from the interrupt handler when it is done receiving the status packet. */
         GPIOB->BSRR = GPIO_BSRR_BS0;
         USART1->CR1 |= USART_CR1_TXEIE;
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        unsigned short usResponse;
         if (xInstructionPacket.eInstructionType == eRead)
         {
             if (ucByteSize(xInstructionPacket.eRegister) == 2)
             {
-                usResponse = (ucRx[6] << 8) + ucRx[5];
+                uxResponse = (ucRx[6] << 8) + ucRx[5];
             }
             else
             {
-                usResponse = ucRx[5];
+                uxResponse = ucRx[5];
             }
         }
-        xQueueSend(xMessage.xQueueToSendResponseTo, &usResponse, portMAX_DELAY);
+        xQueueSend(xMessage.xQueueToSendResponseTo, &uxResponse, portMAX_DELAY);
     }
 }
 

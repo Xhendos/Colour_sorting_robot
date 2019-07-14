@@ -64,16 +64,11 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
         /* Queue for uart response did not get created. */
     }
 
-    /* Configure servo motors. This does not put any arm in a position. Putting an arm into a position or making it perform a movement is done by messaging the arm server. Putting an arm in rest position is not part of configuring servo motors. An arm can be put in rest position by sending the arm server a message. */
+    /* Configure servo motors. This does not put any arm in a position. */
     prvWrite(axBROADCAST_ID, eStatusReturnLevel, 2);
     prvWrite(axBROADCAST_ID, eReturnDelayTime, 50);
     for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
     {
-        if (uxArmIndex != 4)
-        {
-            continue;
-        }
-
         for (UBaseType_t uxMotorIndex = octoMOTOR_A_INDEX; uxMotorIndex <= octoMOTOR_F_INDEX; uxMotorIndex += octoMOTOR_INDEX_INCREMENT)
         {
             Motor_t * pxMotor = &xMotors[uxArmIndex][uxMotorIndex];
@@ -87,8 +82,6 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             prvWrite(pxMotor->ucId, eShutdown, 0);
             prvWrite(pxMotor->ucId, eTorqueEnable, 1);
         }
-
-        uxArmIndex = 3;
     }
 
     while (1)
@@ -284,9 +277,11 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             prvAction();
 
             /* Wait for each servo motor to be done with moving. */
-            unsigned char ucAllServoMotorsDoneMoving = 1;
+            unsigned char ucAllServoMotorsDoneMoving;
             do
             {
+                ucAllServoMotorsDoneMoving = 1;
+
                 for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
                 {
                     if (eBufferedMovement[uxArmIndex] != eDisplace)
@@ -313,6 +308,8 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                 }
             } while (!ucAllServoMotorsDoneMoving);
         }
+
+        xTaskNotifyGive(xMessage.xSenderOfMessage);
     }
 }
 
@@ -367,11 +364,29 @@ static void prvWrite( unsigned char ucId, eRegister eRegister, unsigned short in
 
 static void prvRegWrite( unsigned char ucId, eRegister eRegister, unsigned short int usValue )
 {
+    unsigned short int usResponse;
+    UartMessage_t xUartMessage;
 
+    xUartMessage.xInstructionPacket.eInstructionType = eRegWrite;
+    xUartMessage.xInstructionPacket.ucId = ucId;
+    xUartMessage.xInstructionPacket.eRegister = eRegister;
+    xUartMessage.xInstructionPacket.usParam = usValue;
+    xUartMessage.xQueueToSendResponseTo = xQueueForUartResponse;
+
+    xQueueSend(xUartMessageQueue, &xUartMessage, portMAX_DELAY);
+    xQueueReceive(xQueueForUartResponse, &usResponse, portMAX_DELAY);
 }
 
 static void prvAction()
 {
+    unsigned short int usResponse;
+    UartMessage_t xUartMessage;
 
+    xUartMessage.xInstructionPacket.eInstructionType = eAction;
+    xUartMessage.xInstructionPacket.ucId = axBROADCAST_ID;
+    xUartMessage.xQueueToSendResponseTo = xQueueForUartResponse;
+
+    xQueueSend(xUartMessageQueue, &xUartMessage, portMAX_DELAY);
+    xQueueReceive(xQueueForUartResponse, &usResponse, portMAX_DELAY);
 }
 
