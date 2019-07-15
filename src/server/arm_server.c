@@ -208,13 +208,15 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                         switch (uxPosition)
                         {
                             case 0:
-                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(150));
                                 prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(195));
                                 prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(60));
                                 prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(60));
                                 prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_E_INDEX], axDEGREES_TO_UNITS(140));
                                 prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_F_INDEX], axDEGREES_TO_UNITS(160));
-                            break;
+                                break;
+                            case 1:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(150));
+                                break;
                         }
                         break;
                 }
