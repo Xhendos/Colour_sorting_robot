@@ -36,6 +36,7 @@ typedef enum {
 typedef enum {
     eNoMovement = 0,
     eDisplace,
+    eRest,
 } eArmMovement;
 
 typedef enum {

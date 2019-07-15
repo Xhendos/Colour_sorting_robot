@@ -113,76 +113,109 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             continue;
         }
 
-        /* Loop through each position of a movement. This movement is for displacing a ball and consists of 15 positions. */
-        for (UBaseType_t uxPosition = 0; uxPosition < 15; ++uxPosition)
+        UBaseType_t uxAmountOfPositions = 0;
+
+        switch (xMessage.eMovement)
+        {
+            case eDisplace:
+                uxAmountOfPositions = 15;
+                break;
+            case eRest:
+                uxAmountOfPositions = 1;
+                break;
+            case eNoMovement:
+                uxAmountOfPositions = 0;
+                break;
+        }
+
+        /* Loop through each position of a movement. */
+        for (UBaseType_t uxPosition = 0; uxPosition < uxAmountOfPositions; ++uxPosition)
         {
             prvClearMotorParticipations();
 
-            /* Loop through each arm that should perform the movement. */
+            /* Loop through each arm that should perform a movement. */
             for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
-                if (eBufferedMovement[uxArmIndex] != eDisplace)
+                if (eBufferedMovement[uxArmIndex] != xMessage.eMovement)
                 {
                     continue;
                 }
 
                 /* Servo motors of an arm are tagged as participating and their goal positions are set. */
-                switch (uxPosition)
+                switch (xMessage.eMovement)
                 {
-                    case 0:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(usBufferedFirstRotationInDegrees[uxArmIndex]));
+                    case eDisplace:
+                        switch (uxPosition)
+                        {
+                            case 0:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(usBufferedFirstRotationInDegrees[uxArmIndex]));
+                                break;
+                            case 1:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(60));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(240));
+                                break;
+                            case 2:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(80));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(220));
+                                break;
+                            case 3:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_E_INDEX], axDEGREES_TO_UNITS(160));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_F_INDEX], axDEGREES_TO_UNITS(140));
+                                break;
+                            case 4:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(105));
+                                break;
+                            case 5:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(195));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(60));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(60));
+                                break;
+                            case 6:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(usBufferedSecondRotationInDegrees[uxArmIndex]));
+                                break;
+                            case 7:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(105));
+                                break;
+                            case 8:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(60));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(240));
+                                break;
+                            case 9:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(80));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(220));
+                                break;
+                            case 10:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_E_INDEX], axDEGREES_TO_UNITS(140));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_F_INDEX], axDEGREES_TO_UNITS(160));
+                                break;
+                            case 11:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(60));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(240));
+                                break;
+                            case 12:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(105));
+                                break;
+                            case 13:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(195));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(60));
+                                break;
+                            case 14:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(150));
+                                break;
+                        }
                         break;
-                    case 1:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(60));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(240));
-                        break;
-                    case 2:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(80));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(220));
-                        break;
-                    case 3:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_E_INDEX], axDEGREES_TO_UNITS(160));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_F_INDEX], axDEGREES_TO_UNITS(140));
-                        break;
-                    case 4:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(105));
-                        break;
-                    case 5:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(195));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(60));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(60));
-                        break;
-                    case 6:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(usBufferedSecondRotationInDegrees[uxArmIndex]));
-                        break;
-                    case 7:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(105));
-                        break;
-                    case 8:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(60));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(240));
-                        break;
-                    case 9:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(80));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(220));
-                        break;
-                    case 10:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_E_INDEX], axDEGREES_TO_UNITS(140));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_F_INDEX], axDEGREES_TO_UNITS(160));
-                        break;
-                    case 11:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(60));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(240));
-                        break;
-                    case 12:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(105));
-                        break;
-                    case 13:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(195));
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(60));
-                        break;
-                    case 14:
-                        prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(150));
+                    case eRest:
+                        switch (uxPosition)
+                        {
+                            case 0:
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_A_INDEX], axDEGREES_TO_UNITS(150));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_B_INDEX], axDEGREES_TO_UNITS(195));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_C_INDEX], axDEGREES_TO_UNITS(60));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_D_INDEX], axDEGREES_TO_UNITS(60));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_E_INDEX], axDEGREES_TO_UNITS(140));
+                                prvSetGoalPositionAndParticipation(&xMotors[uxArmIndex][octoMOTOR_F_INDEX], axDEGREES_TO_UNITS(160));
+                            break;
+                        }
                         break;
                 }
             }
@@ -190,7 +223,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             /* To make the participating servo motors reach their position simultaneously, the difference between their goal position and present position are calculated. */
             for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
-                if (eBufferedMovement[uxArmIndex] != eDisplace)
+                if (eBufferedMovement[uxArmIndex] != xMessage.eMovement)
                 {
                     continue;
                 }
@@ -227,7 +260,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             /* Find the largest difference. */
             for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
-                if (eBufferedMovement[uxArmIndex] != eDisplace)
+                if (eBufferedMovement[uxArmIndex] != xMessage.eMovement)
                 {
                     continue;
                 }
@@ -251,7 +284,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             /* The servo motor that has to turn the most degrees turns with a speed of a specified rpm like 15. The servo motors that have to turn a smaller degrees will have their movement speed compensated to a lower value. The moving speed is set via a write instruction packet. Afterwards the goal position is set via a regwrite instruction packet. The regwrite instructions are all executed at the same time via a broadcasted action instruction. */
             for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
-                if (eBufferedMovement[uxArmIndex] != eDisplace)
+                if (eBufferedMovement[uxArmIndex] != xMessage.eMovement)
                 {
                     continue;
                 }
@@ -284,7 +317,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
 
                 for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
                 {
-                    if (eBufferedMovement[uxArmIndex] != eDisplace)
+                    if (eBufferedMovement[uxArmIndex] != xMessage.eMovement)
                     {
                         continue;
                     }

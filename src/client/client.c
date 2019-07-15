@@ -1,6 +1,7 @@
-#include "FreeRTOS.h"
-#include "client.h"
+#include <string.h>
+
 #include "stm32f103xb.h"
+#include "client.h"
 #include "ax.h"
 #include "octo.h"
 #include "algo.h"
@@ -79,14 +80,14 @@ DisplaceInformation_t xDisplaceInformations[64];
         }
 
         //Go through all edges and buffer as many movements as possible in a round.
-        ePlaceholdersFrom[0] = octoT4;
+        ePlaceholdersFrom[0] = octoT0;
         ePlaceholdersFrom[1] = octoT2;
-        ePlaceholdersFrom[2] = octoT2;
-        ePlaceholdersFrom[3] = octoT2;
-        ePlaceholdersTo[0] = octoT5;
+        ePlaceholdersFrom[2] = octoT4;
+        ePlaceholdersFrom[3] = octoT6;
+        ePlaceholdersTo[0] = octoF0;
         ePlaceholdersTo[1] = octoT2;
-        ePlaceholdersTo[2] = octoT2;
-        ePlaceholdersTo[3] = octoT2;
+        ePlaceholdersTo[2] = octoF2;
+        ePlaceholdersTo[3] = octoF3;
 
         UBaseType_t count = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
         UBaseType_t uxAllowed;
@@ -94,7 +95,16 @@ DisplaceInformation_t xDisplaceInformations[64];
         UBaseType_t uxFlagCount = 0;
         DisplaceInformation_t * pxDisplaceInformation;
         DisplaceInformation_t * pxPreviousDisplaceInformation;
-        unsigned char ucDisplaceInformationFlags[count];
+        unsigned char ucDisplaceInformationFlags[64];
+
+        memset(&ucDisplaceInformationFlags, 0, sizeof(ucDisplaceInformationFlags));
+
+        xArmServerMessage.eArms = ALL_ARMS;
+        xArmServerMessage.eMovement = eRest;
+        xArmServerMessage.eExecute = eDoExecute;
+        xArmServerMessage.xSenderOfMessage = xClientTask;
+        xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
         do
         {
@@ -147,8 +157,8 @@ DisplaceInformation_t xDisplaceInformations[64];
             }
 
             xArmServerMessage.eArms = 0;
+            xArmServerMessage.eMovement = eDisplace;
             xArmServerMessage.eExecute = eDoExecute;
-            xArmServerMessage.eMovement = eNoMovement;
             xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
             ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
         } while (uxFlagCount != count);
