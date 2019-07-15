@@ -96,7 +96,7 @@ void I2C1_EV_IRQ_handler(void)
                
             while(I2C1->CR1 & I2C_CR1_STOP);
             I2C1->CR1 |= I2C_CR1_ACK;       /* Set acknowledgement after a byte is received on again */ 
-            GPIOB->CRL |= (GPIO_CRL_MODE6_1);
+            GPIOB->CRL |= (GPIO_CRL_MODE6_1);   /* Errata */
 
             xI2cPeripheralBusy = 0;         /* We finished this request and are free to accept a new one */
             xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);   /* Delete the peeked request, basically acknowledge it */
@@ -182,7 +182,7 @@ volatile uint16_t usVar;
     xWhoAmI.pucWriteBytes = ucI2cWrite;
     xWhoAmI.ucWriteBytesLength = 1;
     xWhoAmI.ucWriteFinished = 0;
-    xWhoAmI.ucRead = 1;
+    xWhoAmI.ucRead = 2;
     xWhoAmI.pucReadBytes = ucI2cResult; 
 
     /* Write to control register 1 */
@@ -191,9 +191,9 @@ volatile uint16_t usVar;
 
     /* Write to control register */
    
-    ucI2cWrite[0] = 0x80 | 0x12;
+    //ucI2cWrite[0] = 0x80 | 0x12;
     //ucI2cWrite[0] = 0x80 | 0x14;  
-    //ucI2cWrite[0] = 0x80 | 0x16;
+    ucI2cWrite[0] = 0x80 | 0x16;
     while(1)
     {
         xWhoAmI.ucWriteFinished = 0; 
