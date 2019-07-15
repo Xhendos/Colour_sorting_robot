@@ -133,6 +133,11 @@ C_SRC    += ./freertos/Source/tasks.c
 C_SRC    += ./freertos/Source/queue.c
 C_SRC    += ./src/i2c/i2c.c
 C_SRC    += ./src/main.c
+C_SRC	 += ./src/server/arm_server.c
+C_SRC    += ./src/server/rgb_server.c
+C_SRC	 += ./src/client/client.c
+C_SRC	 += ./src/manager/manager.c
+C_SRC	 += ./src/algo/algo.c
 
 INCLUDE  += -I./
 INCLUDE  += -I./src
@@ -140,6 +145,12 @@ INCLUDE  += -I./device_headers
 INCLUDE  += -I./freertos/Source/include
 INCLUDE  += -I$(FREERTOS_PORT_I)
 INCLUDE  += -I./src/i2c
+INCLUDE	 += -I./src/server
+INCLUDE	 += -I./src/ax
+INCLUDE	 += -I./src/octo
+INCLUDE	 += -I./src/client
+INCLUDE	 += -I./src/manager
+INCLUDE	 += -I./src/algo
 
 OBJS  = $(C_SRC:.c=.o)
 OBJS += $(CPP_SRC:.cpp=.o)

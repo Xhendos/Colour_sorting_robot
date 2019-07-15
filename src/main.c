@@ -6,209 +6,7 @@
 
 #include "stm32f103xb.h"
 #include "i2c.h"
-
-typedef struct xMESSAGE_I2C
-{
-    uint8_t ucAddress;              /* I2C slave address */
-    uint8_t *pucWriteBytes;         /* Byte that should be send to the slave */
-    uint8_t ucWriteBytesLength;     /* Amount of bytes to send (which can be 1 or 2) */
-    uint8_t ucWriteFinished;        /* ALWAYS set this to 0 */
-    uint8_t ucRead;                 /* 0 = do not read, 1 = read 1 byte from slave, 2 = read 2 bytes from slave */
-    uint8_t *pucReadBytes;          /* Bytes received from the slave */
-} MessageI2c;
-
-static _Bool xI2cPeripheralBusy = 0;
-static MessageI2c xI2cIsrMessage;
-static MessageI2c xI2cDummyMessage;
-static QueueHandle_t xI2cToIsr;
-static QueueHandle_t xI2cFromIsr;
-
-void I2C1_EV_IRQ_handler(void)
-{
-    if(I2C1->SR1 & I2C_SR1_SB)		/* (0x01) Start bit has been send */
-	{
-        if(!xI2cPeripheralBusy)
-        {
-            if(xQueuePeekFromISR(xI2cToIsr, &xI2cIsrMessage))
-                xI2cPeripheralBusy = 1; 
-        }
-        
-        if(xI2cPeripheralBusy)
-        {
-            if(!xI2cIsrMessage.ucWriteFinished)
-            {
-                I2C1->SR1;
-                I2C1->DR = (xI2cIsrMessage.ucAddress << 1) | 0;                
-            } else if(xI2cIsrMessage.ucWriteFinished)
-            {
-                I2C1->SR1;
-                I2C1->DR = (xI2cIsrMessage.ucAddress << 1) | 1;
-            }
-        }           
- 
-        I2C1->SR1 &= ~(I2C_SR1_SB); /* Acknowledge the interrupt */				
-        return;
-	}
-
-	if(I2C1->SR1 & I2C_SR1_ADDR)	/* (0x02) I2C slave address has been send */
-	{
-        if(xI2cIsrMessage.ucWriteFinished)
-        {
-            if(xI2cIsrMessage.ucRead == 1)
-            {
-                I2C1->CR1 &= ~(I2C_CR1_ACK);
-                GPIOB->CRL &= ~(GPIO_CRL_MODE6_1);      /* Errata */
-            } else if(xI2cIsrMessage.ucRead == 2)
-            {
-                GPIOB->CRL &= ~(GPIO_CRL_MODE6_1);      /* Change PB6 from I2C_CLK to I/O pin (errata 2.13.1) */
-                I2C1->CR1 |= (I2C_CR1_POS);             /* Generate a NACK on the next receiving byte */
-                
-                I2C1->SR1;                              /* Acknowledge the interrupt */
-                I2C1->SR2;  
-            
-                I2C1->CR1 &= ~(I2C_CR1_ACK);            /* Do not send an acknowledgement */
-                GPIOB->CRL |= (GPIO_CRL_MODE6_1);       /* Change PB6 from I/O pin to I2C_CLK (errata 2.13.1) */
-                return;
-            }
-        } else if(!xI2cIsrMessage.ucWriteFinished)
-        {           
-            I2C1->SR1;                  /* FIRST acknowledge the interrupt before write to data register */
-            I2C1->SR2;                  /* See Figure 271 in the reference manual, transfer sequence diagram for master transmitter */
-
-            I2C1->DR = xI2cIsrMessage.pucWriteBytes[0];
-            xI2cIsrMessage.ucWriteBytesLength--;    /* One less byte remaining to send */
-        }    
-         
-        I2C1->SR1;                  /* Acknowledge the interrupt */
-        I2C1->SR2;                  
-        I2C1->SR1 &= ~(I2C_SR1_ADDR);
-        if(!xI2cIsrMessage.ucWriteBytesLength)
-            I2C1->CR1 |= (I2C_CR1_STOP);
-        return;
-	}
-
-    if(I2C1->SR1 & I2C_SR1_RXNE)	/* Receive data register not empty */
-	{
-        if(xI2cIsrMessage.ucRead == 1)
-        {
-            I2C1->SR1;                  /* Dummy read to clear the BTF (byte transfer finished) flag */
-            xI2cIsrMessage.pucReadBytes[0] = I2C1->DR;  /* Must be the next action after the dummy SR1 read */
-               
-            while(I2C1->CR1 & I2C_CR1_STOP);
-            I2C1->CR1 |= I2C_CR1_ACK;       /* Set acknowledgement after a byte is received on again */ 
-            GPIOB->CRL |= (GPIO_CRL_MODE6_1);   /* Errata */
-
-            xI2cPeripheralBusy = 0;         /* We finished this request and are free to accept a new one */
-            xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);   /* Delete the peeked request, basically acknowledge it */
-            xQueueSendFromISR(xI2cFromIsr, &xI2cIsrMessage, NULL);      /* Send the response to the caller */
-
-            I2C1->SR1 &= ~(I2C_SR1_RXNE);   /* Acknowledge the interrupt */
-	        I2C1->DR;
-            return;
-        } else if (xI2cIsrMessage.ucRead == 2)
-        {
-            I2C1->CR1 |= (I2C_CR1_STOP);
-            xI2cIsrMessage.pucReadBytes[0] = I2C1->DR;
-            //xI2cIsrMessage.pucReadBytes[1] = I2C1->DR;
-            
-            while(I2C1->CR1 & I2C_CR1_STOP);
-            I2C1->CR1 &= ~(I2C_CR1_POS);
-            I2C1->CR1 |= (I2C_CR1_ACK);
-            
-            xI2cIsrMessage.pucReadBytes[1] = I2C1->DR;
-               
-            xI2cPeripheralBusy = 0;
-            xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);
-            
-            xQueueSendFromISR(xI2cFromIsr, &xI2cIsrMessage, NULL);           
-            
-        }   
-    }
-
-	if(I2C1->SR1 & I2C_SR1_BTF)		/* (0x04) Byte transfer is finished */
-	{
-        if(xI2cIsrMessage.ucWriteFinished)
-        {
-            /* This should never be reached, but handled by RxNE interrupt */
-            volatile int lDummy = 0;
-            lDummy += 1;
-        } else if(!xI2cIsrMessage.ucWriteFinished)
-        {
-            if(xI2cIsrMessage.ucWriteBytesLength)
-            {
-                I2C1->DR = xI2cIsrMessage.pucWriteBytes[1];     
-                xI2cIsrMessage.ucWriteBytesLength--;
- 
-                I2C1->SR1 &= ~(I2C_SR1_BTF);/* Acknowledge the interrupt */
-	            return; 
-            }
-
-            I2C1->CR1 |= (I2C_CR1_STOP);        /* Send a stop bit since we only want to write 1 byte */
-            xI2cIsrMessage.ucWriteFinished = 1; /* We succesfully wrote our byte to the slave */  
-
-            if(xI2cIsrMessage.ucRead)           
-            {
-                I2C1->CR1 |= (I2C_CR1_START);   /* Generate a new START bit (for the read action) */ 
-            } else if(!xI2cIsrMessage.ucRead)
-            {
-                xI2cPeripheralBusy = 0;         /* We finished this request and are free to accept a new one */
-                xQueueReceiveFromISR(xI2cToIsr, &xI2cDummyMessage, NULL);/* Delete the peeked request, basically acknowledge it */
-                xQueueSendFromISR(xI2cFromIsr, &xI2cIsrMessage, NULL);  /* Send the response to the caller */
-            }
-        }         
-
-        I2C1->SR1 &= ~(I2C_SR1_BTF);/* Acknowledge the interrupt */
-	    return;
-    }
-
-	if(I2C1->SR1 & I2C_SR1_TXE)		/* Transmit data register empty */
-	{
-
-        I2C1->SR1 &= ~(I2C_SR1_TXE);/* Acknowledge the interrupt */ 
-	    return;
-    }
-}
-/*-----------------------------------------------------------*/ 
-
-void rgb_task(void)
-{
-uint8_t ucI2cResult[2];
-uint8_t ucI2cWrite[2];
-MessageI2c xWhoAmI;
-MessageI2c xI2cResponse;
-volatile uint16_t usVar;
-
-    xWhoAmI.ucAddress = 0x29;
-    xWhoAmI.pucWriteBytes = ucI2cWrite;
-    xWhoAmI.ucWriteBytesLength = 1;
-    xWhoAmI.ucWriteFinished = 0;
-    xWhoAmI.ucRead = 2;
-    xWhoAmI.pucReadBytes = ucI2cResult; 
-
-    /* Write to control register 1 */
-    //ucI2cWrite[0] = 0x80 | 0x00;
-    //ucI2cWrite[1] = 0x03;
-
-    /* Write to control register */
-   
-    //ucI2cWrite[0] = 0x80 | 0x12;
-    //ucI2cWrite[0] = 0x80 | 0x14;  
-    ucI2cWrite[0] = 0x80 | 0x16;
-    while(1)
-    {
-        xWhoAmI.ucWriteFinished = 0; 
-       if(xQueueSend(xI2cToIsr, &xWhoAmI, portMAX_DELAY) != pdTRUE)
-            continue;               
-        I2C1->CR1 |= (1 << I2C_CR1_START_Pos);
-
-        if(xQueueReceive(xI2cFromIsr, &xI2cResponse, portMAX_DELAY) != pdTRUE)
-            continue;
-        
-        usVar += 1;         
-        
-    }
-}
-/*-----------------------------------------------------------*/ 
+#include "manager.h"
 
 int main(void)
 {
@@ -232,6 +30,10 @@ int main(void)
 
     /************************************************************
     *   Pin number   *   Pin name   *      General purpose      *
+    *************************************************************
+    *       18       *      PB0     *         UART_DIR          *
+    *************************************************************
+    *       45       *      PB8     *          BUTTON           *
     *************************************************************
     *     10--17     *   PA0--7     *         RGB0--7           *
     *************************************************************
@@ -278,6 +80,8 @@ int main(void)
     GPIOB->CRL |= (GPIO_CRL_MODE7 | GPIO_CRL_CNF7);
 
     GPIOB->CRH = 0;
+    GPIOB->CRH &= ~GPIO_CRL_MODE0;
+    GPIOB->CRH |= GPIO_CRL_CNF0_1;
     GPIOB->CRH |= GPIO_CRL_MODE4_0;
     GPIOB->CRH |= GPIO_CRL_MODE5_0;
     GPIOB->CRH |= GPIO_CRL_MODE6_0;
@@ -312,33 +116,35 @@ int main(void)
      *       = 9 */
 
     I2C1->CR2 = 0;
-    I2C1->CR2 |= I2C_CR2_FREQ_3;                /* Clock frequency. FREQ_3 is 8 MHz */
-    I2C1->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN); /* Embrace I2C1 event interrupts (including RxNE and TxE interrupt) */
+    I2C1->CR2 |= I2C_CR2_FREQ_3;                        /* Clock frequency. FREQ_3 is 8 MHz */
+    I2C1->CR2 |= (I2C_CR2_ITEVTEN | I2C_CR2_ITBUFEN);   /* Embrace I2C1 event interrupts (including RxNE and TxE interrupt) */
 
     I2C1->CCR = 0;
-    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;       /* Generate 100 KHz serial clock speed */
+    I2C1->CCR |= 0x28 << I2C_CCR_CCR_Pos;               /* Generate 100 KHz serial clock speed */
 
     I2C1->TRISE = 0;
-    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;  /* Maximum rise time */
+    I2C1->TRISE |= 0x9 << I2C_TRISE_TRISE_Pos;          /* Maximum rise time */
 
     I2C1->CR1 = 0;
-    I2C1->CR1 |= I2C_CR1_PE;                    /* Turn on the peripheral */ 
-
+    I2C1->CR1 |= I2C_CR1_PE;                            /* Turn on the peripheral */
+   
     /* Create and initialise queues */
-    xI2cFromIsr = xQueueCreate(1, sizeof(MessageI2c));   
-    xI2cToIsr = xQueueCreate(1, sizeof(MessageI2c));
+    //xI2cFromIsr = xQueueCreate(1, sizeof(MessageI2c));   
+    //xI2cToIsr = xQueueCreate(1, sizeof(MessageI2c));
 
-    if(xI2cFromIsr == NULL || xI2cToIsr == NULL)
-        return -2;                              /* No sufficient memory to create the queue */
+ //   if(xI2cFromIsr == NULL || xI2cToIsr == NULL)
+ //     return -2;                              /* No sufficient memory to create the queue */
 
     NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); /* https://www.freertos.org/RTOS-Cortex-M3-M4.html */
     NVIC_SetPriority(I2C1_EV_IRQn, 2);
     NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
     NVIC_EnableIRQ(I2C1_EV_IRQn);   
  
-
-    xTaskCreate(rgb_task, "rgb_task", 500, NULL, 3, NULL);
-    vTaskStartScheduler();                      /* Start the FreeRTOS scheduler */
+    xTaskCreate(vTaskManager, "manager", 128, NULL, configMAX_PRIORITIES - 1, NULL);
+    vTaskStartScheduler();
+     
+    //xTaskCreate(rgb_task, "rgb_task", 500, NULL, 3, NULL);
+    //vTaskStartScheduler();                      /* Start the FreeRTOS scheduler */
 
     return -1;                                  /* We should never hit this line */
 }
