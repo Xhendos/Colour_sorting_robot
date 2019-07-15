@@ -89,15 +89,17 @@ DisplaceInformation_t xDisplaceInformations[64];
         ePlaceholdersTo[2] = octoF2;
         ePlaceholdersTo[3] = octoF3;
 
-        UBaseType_t count = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
-        UBaseType_t uxAllowed;
+        UBaseType_t uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
+        UBaseType_t uxAllowedForBuffering;
         ArmServerMessage_t xArmServerMessage;
-        UBaseType_t uxFlagCount = 0;
+        UBaseType_t uxAmountOfExecutedDisplaceInformation = 0;
         DisplaceInformation_t * pxDisplaceInformation;
         DisplaceInformation_t * pxPreviousDisplaceInformation;
-        unsigned char ucDisplaceInformationFlags[64];
+        unsigned char ucDisplaceInformationExecuted[64];
+        unsigned char ucDisplaceInformationBuffered[64];
 
-        memset(&ucDisplaceInformationFlags, 0, sizeof(ucDisplaceInformationFlags));
+        memset(&ucDisplaceInformationBuffered, 0, sizeof(ucDisplaceInformationExecuted));
+        memset(&ucDisplaceInformationExecuted, 0, sizeof(ucDisplaceInformationExecuted));
 
         xArmServerMessage.eArms = ALL_ARMS;
         xArmServerMessage.eMovement = eRest;
@@ -108,22 +110,22 @@ DisplaceInformation_t xDisplaceInformations[64];
 
         do
         {
-            for (uint8_t n = 0; n < count; ++n)
+            for (UBaseType_t uxCurrentDisplaceInformation = 0; uxCurrentDisplaceInformation < uxAmountOfDisplaceInformation; ++uxCurrentDisplaceInformation)
             {
-                pxDisplaceInformation = &xDisplaceInformations[n];
+                pxDisplaceInformation = &xDisplaceInformations[uxCurrentDisplaceInformation];
 
-                if (ucDisplaceInformationFlags[n])
+                if (ucDisplaceInformationExecuted[uxCurrentDisplaceInformation])
                 {
                     continue;
                 }
 
-                uxAllowed = 1;
+                uxAllowedForBuffering = 1;
 
-                for (uint8_t nn = 0; nn < n; ++nn)
+                for (UBaseType_t uxPreviousDisplaceInformation = 0; uxPreviousDisplaceInformation < uxCurrentDisplaceInformation; ++uxPreviousDisplaceInformation)
                 {
-                    pxPreviousDisplaceInformation = &xDisplaceInformations[nn];
+                    pxPreviousDisplaceInformation = &xDisplaceInformations[uxPreviousDisplaceInformation];
 
-                    if (ucDisplaceInformationFlags[n])
+                    if (ucDisplaceInformationExecuted[uxPreviousDisplaceInformation])
                     {
                         continue;
                     }
@@ -133,12 +135,12 @@ DisplaceInformation_t xDisplaceInformations[64];
                         || pxDisplaceInformation->ePlaceholderTo == pxPreviousDisplaceInformation->ePlaceholderFrom
                         || pxDisplaceInformation->ePlaceholderTo == pxPreviousDisplaceInformation->ePlaceholderTo)
                     {
-                        uxAllowed = 0;
+                        uxAllowedForBuffering = 0;
                         break;
                     }
                 }
 
-                if (!uxAllowed)
+                if (!uxAllowedForBuffering)
                 {
                     continue;
                 }
@@ -151,9 +153,7 @@ DisplaceInformation_t xDisplaceInformations[64];
                 xArmServerMessage.xSenderOfMessage = xClientTask;
                 xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
 
-                /* Although the movement isn't performed yet by the arm, this still is a viable place to increment the flag count. */
-                ucDisplaceInformationFlags[n] = 1;
-                ++uxFlagCount;
+                ucDisplaceInformationBuffered[uxCurrentDisplaceInformation] = 1;
             }
 
             xArmServerMessage.eArms = 0;
@@ -161,7 +161,16 @@ DisplaceInformation_t xDisplaceInformations[64];
             xArmServerMessage.eExecute = eDoExecute;
             xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
             ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-        } while (uxFlagCount != count);
+
+            for (UBaseType_t uxI = 0; uxI < uxAmountOfDisplaceInformation; ++uxI)
+            {
+                if (!ucDisplaceInformationExecuted[uxI] && ucDisplaceInformationBuffered[uxI])
+                {
+                    ucDisplaceInformationExecuted[uxI] = 1;
+                    ++uxAmountOfExecutedDisplaceInformation;
+                }
+            }
+        } while (uxAmountOfExecutedDisplaceInformation != uxAmountOfDisplaceInformation);
     }
 }
 
