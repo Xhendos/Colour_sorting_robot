@@ -27,6 +27,15 @@ static const RgbColours_t xEmptyPlaceholderColour = { 135, 80, 50 };
 DisplaceInformation_t xDisplaceInformations[64];
 RgbServerMessage_t xRgbServerMessage;
 QueueHandle_t xQueueForRgbServerResponse;
+UBaseType_t uxAmountOfDisplaceInformation;
+UBaseType_t uxAllowedForBuffering;
+ArmServerMessage_t xArmServerMessage;
+UBaseType_t uxAmountOfExecutedDisplaceInformation;
+DisplaceInformation_t * pxDisplaceInformation;
+DisplaceInformation_t * pxPreviousDisplaceInformation;
+unsigned char ucDisplaceInformationExecuted[64];
+unsigned char ucDisplaceInformationBuffered[64];
+
 
     xQueueForRgbServerResponse = xQueueCreate( 1, sizeof(RgbColours_t) );
 
@@ -34,31 +43,31 @@ QueueHandle_t xQueueForRgbServerResponse;
 
     while (1)
     {
-        //Wait for button press.
-        //while (GPIOB->IDR & GPIO_IDR_IDR8);
-        //while (!(GPIOB->IDR & GPIO_IDR_IDR8));
-        //Scan each placeholder for colours.
+        /* Wait for button press. */
+        while (GPIOB->IDR & GPIO_IDR_IDR8);
+        while (!(GPIOB->IDR & GPIO_IDR_IDR8));
+
+        /* Request the colour of each rgb sensor from the rgb server. The user will have put balls on placeholders before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
-            //Send message to rgb server queue.
             xRgbServerMessage.ePlaceholder = ePlaceholder;
             xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
-            //Receive response.
             xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
         }
-        //Wait for button press.
-        //while (GPIOB->IDR & GPIO_IDR_IDR8);
-        //while (!(GPIOB->IDR & GPIO_IDR_IDR8));
-        //Scan each placeholder for colours.
+
+        /* Wait for button press. */
+        while (GPIOB->IDR & GPIO_IDR_IDR8);
+        while (!(GPIOB->IDR & GPIO_IDR_IDR8));
+
+        /* Request the colour of each rgb sensor from the rgb server. The user might have moved some balls before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
-            //Send message to rgb server queue.
             xRgbServerMessage.ePlaceholder = ePlaceholder;
             xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
-            //Receive response.
             xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
         }
-        //Terminate if there are balls with a colour that do not match any of the first reading.
+
+        /* Terminate if there are colours from the second request that do not match any of the first request. */
         for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
         {
             xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
@@ -85,38 +94,25 @@ QueueHandle_t xQueueForRgbServerResponse;
             }
             if (!xMatchingPlaceholderColour)
             {
-                //Terminate.
+                /* Terminate. */
+                while (1);
             }
         }
 
-        //Go through all edges and buffer as many movements as possible in a round.
-        ePlaceholdersFrom[0] = octoT0;
-        ePlaceholdersFrom[1] = octoT2;
-        ePlaceholdersFrom[2] = octoT4;
-        ePlaceholdersFrom[3] = octoT6;
-        ePlaceholdersTo[0] = octoF2;
-        ePlaceholdersTo[1] = octoF3;
-        ePlaceholdersTo[2] = octoF0;
-        ePlaceholdersTo[3] = octoF1;
-
-        UBaseType_t uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
-        UBaseType_t uxAllowedForBuffering;
-        ArmServerMessage_t xArmServerMessage;
-        UBaseType_t uxAmountOfExecutedDisplaceInformation = 0;
-        DisplaceInformation_t * pxDisplaceInformation;
-        DisplaceInformation_t * pxPreviousDisplaceInformation;
-        unsigned char ucDisplaceInformationExecuted[64];
-        unsigned char ucDisplaceInformationBuffered[64];
-
-        memset(&ucDisplaceInformationBuffered, 0, sizeof(ucDisplaceInformationExecuted));
-        memset(&ucDisplaceInformationExecuted, 0, sizeof(ucDisplaceInformationExecuted));
-
+        /* Move all arms to their rest position. */
         xArmServerMessage.eArms = ALL_ARMS;
         xArmServerMessage.eMovement = eRest;
         xArmServerMessage.eExecute = eDoExecute;
         xArmServerMessage.xSenderOfMessage = xClientTask;
-        //xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
-        //ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+
+
+        /* Use algorithm to find displace information based on the begin and end positions of the balls. Process all of the displace information by requesting the arm server to move certain arms. Each displace information contains information about which arm to displace a ball and the rotation (goal position) in degrees the arm needs to turn to the 'from' placeholder and to the 'to' placeholder. The arms that are allowed to displace a ball are buffered into a round and executed at the same time. */
+        uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
+        uxAmountOfExecutedDisplaceInformation = 0;
+        memset(&ucDisplaceInformationBuffered, 0, sizeof(ucDisplaceInformationExecuted));
+        memset(&ucDisplaceInformationExecuted, 0, sizeof(ucDisplaceInformationExecuted));
 
         do
         {
@@ -161,7 +157,7 @@ QueueHandle_t xQueueForRgbServerResponse;
                 xArmServerMessage.usFirstRotationInDegrees = pxDisplaceInformation->usFirstRotationInDegrees;
                 xArmServerMessage.usSecondRotationInDegrees = pxDisplaceInformation->usSecondRotationInDegrees;
                 xArmServerMessage.xSenderOfMessage = xClientTask;
-                //xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+                xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
 
                 ucDisplaceInformationBuffered[uxCurrentDisplaceInformation] = 1;
             }
@@ -169,8 +165,8 @@ QueueHandle_t xQueueForRgbServerResponse;
             xArmServerMessage.eArms = 0;
             xArmServerMessage.eMovement = eDisplace;
             xArmServerMessage.eExecute = eDoExecute;
-            //xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
-            //ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+            xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+            ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
             for (UBaseType_t uxI = 0; uxI < uxAmountOfDisplaceInformation; ++uxI)
             {
