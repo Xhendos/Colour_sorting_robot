@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 
 #include "stm32f103xb.h"
 #include "client.h"
@@ -10,20 +11,26 @@
 
 TaskHandle_t xClientTask;
 
-static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB);
+static BaseType_t prvDoColoursMatch(RgbColours_t xColourA, RgbColours_t xColourB);
 
 void vTaskClient( void * pvParameters )
 {
-BaseType_t xPlaceholderColoursFirstRound[12];
-BaseType_t xPlaceholderColoursSecondRound[12];
-BaseType_t xPlaceholderColourFirst;
-BaseType_t xPlaceholderColourSecond;
+RgbColours_t xPlaceholderColoursFirstRound[12];
+RgbColours_t xPlaceholderColoursSecondRound[12];
+RgbColours_t xPlaceholderColourFirst;
+RgbColours_t xPlaceholderColourSecond;
 BaseType_t xMatchingPlaceholderColour;
 ePlaceholder ePlaceholdersFrom[4];
 ePlaceholder ePlaceholdersTo[4];
 BaseType_t xPlaceholdersIndex = 0;
-BaseType_t xEmptyPlaceholderColour = 0;
+static const RgbColours_t xEmptyPlaceholderColour = { 135, 80, 50 };
 DisplaceInformation_t xDisplaceInformations[64];
+RgbServerMessage_t xRgbServerMessage;
+QueueHandle_t xQueueForRgbServerResponse;
+
+    xQueueForRgbServerResponse = xQueueCreate( 1, sizeof(RgbColours_t) );
+
+    xRgbServerMessage.xQueueDestination = xQueueForRgbServerResponse;
 
     while (1)
     {
@@ -34,9 +41,10 @@ DisplaceInformation_t xDisplaceInformations[64];
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
             //Send message to rgb server queue.
+            xRgbServerMessage.ePlaceholder = ePlaceholder;
+            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
             //Receive response.
-            //Process response.
-            xPlaceholderColoursFirstRound[ePlaceholder] = 0;
+            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
         }
         //Wait for button press.
         //while (GPIOB->IDR & GPIO_IDR_IDR8);
@@ -45,9 +53,10 @@ DisplaceInformation_t xDisplaceInformations[64];
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
             //Send message to rgb server queue.
+            xRgbServerMessage.ePlaceholder = ePlaceholder;
+            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
             //Receive response.
-            //Process response.
-            xPlaceholderColoursSecondRound[ePlaceholder] = 0;
+            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
         }
         //Terminate if there are balls with a colour that do not match any of the first reading.
         for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
@@ -85,10 +94,10 @@ DisplaceInformation_t xDisplaceInformations[64];
         ePlaceholdersFrom[1] = octoT2;
         ePlaceholdersFrom[2] = octoT4;
         ePlaceholdersFrom[3] = octoT6;
-        ePlaceholdersTo[0] = octoF0;
-        ePlaceholdersTo[1] = octoT2;
-        ePlaceholdersTo[2] = octoF2;
-        ePlaceholdersTo[3] = octoF3;
+        ePlaceholdersTo[0] = octoF2;
+        ePlaceholdersTo[1] = octoF3;
+        ePlaceholdersTo[2] = octoF0;
+        ePlaceholdersTo[3] = octoF1;
 
         UBaseType_t uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
         UBaseType_t uxAllowedForBuffering;
@@ -106,8 +115,8 @@ DisplaceInformation_t xDisplaceInformations[64];
         xArmServerMessage.eMovement = eRest;
         xArmServerMessage.eExecute = eDoExecute;
         xArmServerMessage.xSenderOfMessage = xClientTask;
-        xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
-        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        //xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+        //ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
         do
         {
@@ -152,7 +161,7 @@ DisplaceInformation_t xDisplaceInformations[64];
                 xArmServerMessage.usFirstRotationInDegrees = pxDisplaceInformation->usFirstRotationInDegrees;
                 xArmServerMessage.usSecondRotationInDegrees = pxDisplaceInformation->usSecondRotationInDegrees;
                 xArmServerMessage.xSenderOfMessage = xClientTask;
-                xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+                //xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
 
                 ucDisplaceInformationBuffered[uxCurrentDisplaceInformation] = 1;
             }
@@ -160,8 +169,8 @@ DisplaceInformation_t xDisplaceInformations[64];
             xArmServerMessage.eArms = 0;
             xArmServerMessage.eMovement = eDisplace;
             xArmServerMessage.eExecute = eDoExecute;
-            xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
-            ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+            //xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
+            //ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
             for (UBaseType_t uxI = 0; uxI < uxAmountOfDisplaceInformation; ++uxI)
             {
@@ -175,15 +184,25 @@ DisplaceInformation_t xDisplaceInformations[64];
     }
 }
 
-static BaseType_t prvDoColoursMatch(BaseType_t xColourA, BaseType_t xColourB)
+static BaseType_t prvDoColoursMatch(RgbColours_t xColourA, RgbColours_t xColourB)
 {
-    if (xColourA == xColourB)
-    {
-        return 1;
-    }
-    else
+    static UBaseType_t uxMargin = 30;
+
+    if (xColourA.ulRed - xColourB.ulRed > uxMargin)
     {
         return 0;
     }
+
+    if (xColourA.ulGreen - xColourB.ulGreen > uxMargin)
+    {
+        return 0;
+    }
+
+    if (xColourA.ulBlue - xColourB.ulBlue > uxMargin)
+    {
+        return 0;
+    }
+
+    return 1;
 }
 
