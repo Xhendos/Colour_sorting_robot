@@ -219,6 +219,8 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                                 break;
                         }
                         break;
+                    default:
+                        break;
                 }
             }
 
@@ -283,7 +285,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                 }
             }
 
-            /* The servo motor that has to turn the most degrees turns with a speed of a specified rpm like 15. The servo motors that have to turn a smaller degrees will have their movement speed compensated to a lower value. The moving speed is set via a write instruction packet. Afterwards the goal position is set via a regwrite instruction packet. The regwrite instructions are all executed at the same time via a broadcasted action instruction. */
+            /* The servo motor that has to turn the most degrees, turns with a speed of a specified rpm. The servo motors that have to turn a smaller degrees will have their movement speed compensated to a lower value. The moving speed is set via a write instruction packet. Afterwards the goal position is set via a regwrite instruction packet. The regwrite instructions are all executed at the same time via a broadcasted action instruction. */
             for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
             {
                 if (eBufferedMovement[uxArmIndex] != xMessage.eMovement)
