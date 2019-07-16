@@ -21,8 +21,6 @@
 #define octoARM_H_INDEX             ( 7 )
 #define octoARM_INDEX_INCREMENT     ( 1 )
 
-#define octoARM_H_INDEX             ( octoARM_G_INDEX )
-
 #define octoRPM                     ( 15 )
 
 #define octoA0                      ( eArm0 )
@@ -56,7 +54,6 @@ typedef enum {
     eArm5,
     eArm6,
     eArm7,
-    eArm8,
 } eArm;
 
 typedef enum {
