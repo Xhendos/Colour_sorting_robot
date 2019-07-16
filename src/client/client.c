@@ -182,7 +182,7 @@ unsigned char ucDisplaceInformationBuffered[64];
 
 static BaseType_t prvDoColoursMatch(RgbColours_t xColourA, RgbColours_t xColourB)
 {
-    static UBaseType_t uxMargin = 30;
+    static UBaseType_t uxMargin = 8;
 
     if (xColourA.ulRed - xColourB.ulRed > uxMargin)
     {
