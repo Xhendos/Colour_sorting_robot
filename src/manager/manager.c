@@ -2,9 +2,11 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+
 #include "client.h"
 #include "arm_server.h"
 #include "uart.h"
+#include "rgb_server.h"
 
 void vTaskManager( void * pvParameters )
 {
@@ -12,6 +14,8 @@ void vTaskManager( void * pvParameters )
     xTaskCreate(vTaskArmServer, "arm_server", 128, NULL, 2, &xArmServerTask);
     xTaskCreate(vTaskUart, "uart", 128, NULL, 3, &xUartTask);
 
+    xTaskCreate(vTaskRgbServer, "rgb_server", 128, NULL, 3, NULL);
+    
     vTaskDelete(NULL);
 }
 

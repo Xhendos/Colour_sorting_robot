@@ -6,6 +6,7 @@
 #include "octo.h"
 #include "algo.h"
 #include "arm_server.h"
+#include "rgb_server.h"
 
 TaskHandle_t xClientTask;
 

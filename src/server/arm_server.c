@@ -4,7 +4,7 @@
 #include "uart.h"
 
 typedef struct xMOTOR {
-    unsigned char ucId;
+    const unsigned char ucId;
     unsigned short int usPresentPositionInUnits;
     unsigned short int usGoalPositionInUnits;
     unsigned short int usDifferenceInUnits;
