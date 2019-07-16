@@ -71,7 +71,7 @@ else
 endif
 CFLAGS += -Wall
 CFLAGS += -g
-CFLAGS += -O0
+CFLAGS += -Os
 CFLAGS += -fmessage-length=0 -fno-common
 CFLAGS += -ffunction-sections -fdata-sections
 #CFLAGS += --specs=nosys.specs
@@ -92,7 +92,7 @@ else
 endif
 CPPFLAGS += -Wall
 CPFLAGS += -g
-CPPFLAGS += -O0
+CPPFLAGS += -Os
 CPPFLAGS += -fmessage-length=0 -fno-common
 CPPFLAGS += -ffunction-sections -fdata-sections
 CPPFLAGS += -fno-exceptions
