@@ -344,6 +344,12 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             } while (!ucAllServoMotorsDoneMoving);
         }
 
+        /* Clear buffered movements. */
+        for (UBaseType_t uxArmIndex = octoARM_A_INDEX; uxArmIndex <= octoARM_H_INDEX; uxArmIndex += octoARM_INDEX_INCREMENT)
+        {
+            eBufferedMovement[uxArmIndex] = 0;
+        }
+
         xTaskNotifyGive(xMessage.xSenderOfMessage);
     }
 }
