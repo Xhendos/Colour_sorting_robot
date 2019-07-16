@@ -25,7 +25,7 @@ typedef struct xRGB
 
 extern QueueHandle_t xFromRgbServer;
 extern QueueHandle_t xToRgbServer;
-extern TaskHandle_t xTt;
+extern TaskHandle_t xRgbServerTask;
 
 void vTaskRgbServer( void * pvParameters );
 

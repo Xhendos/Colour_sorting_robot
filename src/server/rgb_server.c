@@ -14,7 +14,6 @@ uint8_t prvGetRed(uint8_t ucPosition);
 uint8_t prvGetGreen(uint8_t ucPosition);
 uint8_t prvGetBlue(uint8_t ucPosition);
 
-
 typedef struct xMESSAGE_I2C
 {
     uint8_t ucAddress;              /* I2C slave address */
@@ -30,6 +29,7 @@ static MessageI2c xI2cIsrMessage;
 static MessageI2c xI2cDummyMessage;
 QueueHandle_t xI2cToIsr;
 QueueHandle_t xI2cFromIsr;
+TaskHandle_t xRgbServerTask;
 
 void I2C1_EV_IRQ_handler(void)
 {
