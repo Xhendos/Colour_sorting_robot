@@ -35,17 +35,19 @@ DisplaceInformation_t * pxDisplaceInformation;
 DisplaceInformation_t * pxPreviousDisplaceInformation;
 unsigned char ucDisplaceInformationExecuted[64];
 unsigned char ucDisplaceInformationBuffered[64];
+volatile UBaseType_t uxButtonState;
 
 
     xQueueForRgbServerResponse = xQueueCreate( 1, sizeof(RgbColours_t) );
 
     xRgbServerMessage.xQueueDestination = xQueueForRgbServerResponse;
 
+
     while (1)
     {
         /* Wait for button press. */
-        while (GPIOB->IDR & GPIO_IDR_IDR8);
-        while (!(GPIOB->IDR & GPIO_IDR_IDR8));
+        do { uxButtonState = GPIOB->IDR & GPIO_IDR_IDR8; } while (uxButtonState);
+        do { uxButtonState = !(GPIOB->IDR & GPIO_IDR_IDR8); } while (uxButtonState);
 
         /* Request the colour of each rgb sensor from the rgb server. The user will have put balls on placeholders before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
@@ -56,8 +58,8 @@ unsigned char ucDisplaceInformationBuffered[64];
         }
 
         /* Wait for button press. */
-        while (GPIOB->IDR & GPIO_IDR_IDR8);
-        while (!(GPIOB->IDR & GPIO_IDR_IDR8));
+        do { uxButtonState = GPIOB->IDR & GPIO_IDR_IDR8; } while (uxButtonState);
+        do { uxButtonState = !(GPIOB->IDR & GPIO_IDR_IDR8); } while (uxButtonState);
 
         /* Request the colour of each rgb sensor from the rgb server. The user might have moved some balls before pressing the button. */
 //        for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
