@@ -139,6 +139,8 @@ int main(void)
     NVIC_SetPriority(I2C1_EV_IRQn, 2);
     NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
     NVIC_EnableIRQ(I2C1_EV_IRQn);   
+
+    I2C1->CR1 |= (1 << I2C_CR1_START_Pos);
  
     xTaskCreate(vTaskManager, "manager", 128, NULL, configMAX_PRIORITIES - 1, NULL);
     vTaskStartScheduler();

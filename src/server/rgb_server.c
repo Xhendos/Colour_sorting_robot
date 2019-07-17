@@ -193,13 +193,13 @@ RgbColours_t xColours;
 
     while(1)
     {
-        if(xQueueReceive(xToRgbServer, &xMessage, portMAX_DELAY) != pdTRUE)
-            continue;
+//        if(xQueueReceive(xToRgbServer, &xMessage, portMAX_DELAY) != pdTRUE)
+//            continue;
 
         xColours = prvGetRgb(xMessage.ePlaceholder);
    
-        if(xQueueSend(xMessage.xQueueDestination, &xColours, portMAX_DELAY) != pdTRUE)
-            continue;  
+//        if(xQueueSend(xMessage.xQueueDestination, &xColours, portMAX_DELAY) != pdTRUE)
+//            continue;  
     }
 }
 /*-----------------------------------------------------------*/ 
