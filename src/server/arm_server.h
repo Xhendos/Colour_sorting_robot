@@ -55,6 +55,7 @@ typedef struct xARM_SEVER_MESSAGE {
 
 extern TaskHandle_t xArmServerTask;
 extern QueueHandle_t xArmServerMessageQueue;
+extern UBaseType_t uxArmServerDoneConfiguring;
 
 void vTaskArmServer( void * pvParameters );
 

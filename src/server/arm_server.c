@@ -1,3 +1,4 @@
+#include "stm32f103xb.h"
 #include "arm_server.h"
 #include "ax.h"
 #include "octo.h"
@@ -42,6 +43,7 @@ static Motor_t xMotors[8][6] = {
 TaskHandle_t xArmServerTask;
 QueueHandle_t xArmServerMessageQueue;
 static QueueHandle_t xQueueForUartResponse;
+UBaseType_t uxArmServerDoneConfiguring;
 
 void vTaskArmServer( void * pvParameters )
 {
@@ -64,6 +66,8 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
         /* Queue for uart response did not get created. */
     }
 
+    uxArmServerDoneConfiguring = 0;
+
     /* Configure servo motors. This does not put any arm in a position. */
     prvWrite(axBROADCAST_ID, eStatusReturnLevel, 2);
     prvWrite(axBROADCAST_ID, eReturnDelayTime, 50);
@@ -83,6 +87,8 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
             prvWrite(pxMotor->ucId, eTorqueEnable, 1);
         }
     }
+
+    uxArmServerDoneConfiguring = 1;
 
     while (1)
     {

@@ -37,17 +37,21 @@ unsigned char ucDisplaceInformationExecuted[64];
 unsigned char ucDisplaceInformationBuffered[64];
 volatile UBaseType_t uxButtonState;
 
-
     xQueueForRgbServerResponse = xQueueCreate( 1, sizeof(RgbColours_t) );
 
     xRgbServerMessage.xQueueDestination = xQueueForRgbServerResponse;
 
-
     while (1)
     {
+        while (!(uxArmServerDoneConfiguring && uxRgbServerDoneConfiguring));
+
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BR11);
+
         /* Wait for button press. */
         do { uxButtonState = GPIOB->IDR & GPIO_IDR_IDR8; } while (uxButtonState);
         do { uxButtonState = !(GPIOB->IDR & GPIO_IDR_IDR8); } while (uxButtonState);
+
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BS11);
 
         /* Request the colour of each rgb sensor from the rgb server. The user will have put balls on placeholders before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
@@ -57,9 +61,13 @@ volatile UBaseType_t uxButtonState;
             xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
         }
 
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BR11);
+
         /* Wait for button press. */
         do { uxButtonState = GPIOB->IDR & GPIO_IDR_IDR8; } while (uxButtonState);
         do { uxButtonState = !(GPIOB->IDR & GPIO_IDR_IDR8); } while (uxButtonState);
+
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BS11);
 
         /* Request the colour of each rgb sensor from the rgb server. The user might have moved some balls before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
@@ -96,6 +104,8 @@ volatile UBaseType_t uxButtonState;
             }
             if (!xMatchingPlaceholderColour)
             {
+                GPIOB->BSRR = (GPIO_BSRR_BR10 | GPIO_BSRR_BS11);
+
                 /* Terminate. */
                 while (1);
             }
@@ -108,7 +118,6 @@ volatile UBaseType_t uxButtonState;
         xArmServerMessage.xSenderOfMessage = xClientTask;
         xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
         ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-
 
         /* Use algorithm to find displace information based on the begin and end positions of the balls. Process all of the displace information by requesting the arm server to move certain arms. Each displace information contains information about which arm to displace a ball and the rotation (goal position) in degrees the arm needs to turn to the 'from' placeholder and to the 'to' placeholder. The arms that are allowed to displace a ball are buffered into a round and executed at the same time. */
         uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );

@@ -30,6 +30,7 @@ static MessageI2c xI2cDummyMessage;
 QueueHandle_t xI2cToIsr;
 QueueHandle_t xI2cFromIsr;
 TaskHandle_t xRgbServerTask;
+UBaseType_t uxRgbServerDoneConfiguring;
 
 void I2C1_EV_IRQ_handler(void)
 {
@@ -189,7 +190,11 @@ RgbColours_t xColours;
     xI2cToIsr = xQueueCreate(1, sizeof(MessageI2c));
     xI2cFromIsr = xQueueCreate(1, sizeof(MessageI2c));
 
+    uxRgbServerDoneConfiguring = 0;
+
     prvRgbInit();       /* Initialise the TCS34725 */
+
+    uxRgbServerDoneConfiguring = 1;
 
     while(1)
     {
