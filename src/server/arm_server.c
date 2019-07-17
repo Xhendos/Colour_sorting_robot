@@ -121,7 +121,7 @@ unsigned short int usBufferedSecondRotationInDegrees[8];
                 uxAmountOfPositions = 15;
                 break;
             case eRest:
-                uxAmountOfPositions = 1;
+                uxAmountOfPositions = 2;
                 break;
             case eNoMovement:
                 uxAmountOfPositions = 0;
