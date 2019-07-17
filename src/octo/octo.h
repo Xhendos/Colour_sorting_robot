@@ -1,6 +1,8 @@
 #ifndef _OCTO_H
 #define _OCTO_H
 
+//#define octoNO_OPTIMAZATION
+
 #define octoMOTOR_A_INDEX           ( 0 )
 #define octoMOTOR_B_INDEX           ( 1 )
 #define octoMOTOR_C_INDEX           ( 2 )

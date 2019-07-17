@@ -50,9 +50,9 @@ unsigned char ucDisplaceInformationBuffered[64];
         /* Request the colour of each rgb sensor from the rgb server. The user will have put balls on placeholders before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
-            xRgbServerMessage.ePlaceholder = ePlaceholder;
-            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
-            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
+        //    xRgbServerMessage.ePlaceholder = ePlaceholder;
+        //    xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
+        //    xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
         }
 
         /* Wait for button press. */
@@ -60,45 +60,45 @@ unsigned char ucDisplaceInformationBuffered[64];
         while (!(GPIOB->IDR & GPIO_IDR_IDR8));
 
         /* Request the colour of each rgb sensor from the rgb server. The user might have moved some balls before pressing the button. */
-        for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
-        {
-            xRgbServerMessage.ePlaceholder = ePlaceholder;
-            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
-            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
-        }
-
-        /* Terminate if there are colours from the second request that do not match any of the first request. */
-        for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
-        {
-            xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
-            if (prvDoColoursMatch(xPlaceholderColourSecond, xEmptyPlaceholderColour))
-            {
-                continue;
-            }
-            xMatchingPlaceholderColour = 0;
-            for (ePlaceholder ePlaceholderFirst = ePlaceholder0; ePlaceholderFirst <= ePlaceholder11; ++ePlaceholderFirst)
-            {
-                xPlaceholderColourFirst = xPlaceholderColoursFirstRound[ePlaceholderFirst];
-                if (prvDoColoursMatch(xPlaceholderColourFirst, xEmptyPlaceholderColour))
-                {
-                    continue;
-                }
-                if (prvDoColoursMatch(xPlaceholderColourFirst, xPlaceholderColourSecond))
-                {
-                    ePlaceholdersFrom[xPlaceholdersIndex] = ePlaceholderSecond;
-                    ePlaceholdersTo[xPlaceholdersIndex] = ePlaceholderFirst;
-                    ++xPlaceholdersIndex;
-                    xMatchingPlaceholderColour = 1;
-                    break;
-                }
-            }
-            if (!xMatchingPlaceholderColour)
-            {
-                /* Terminate. */
-                while (1);
-            }
-        }
-
+//        for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
+//        {
+//            xRgbServerMessage.ePlaceholder = ePlaceholder;
+//            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
+//            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
+//        }
+//
+//        /* Terminate if there are colours from the second request that do not match any of the first request. */
+//        for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
+//        {
+//            xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
+//            if (prvDoColoursMatch(xPlaceholderColourSecond, xEmptyPlaceholderColour))
+//            {
+//                continue;
+//            }
+//            xMatchingPlaceholderColour = 0;
+//            for (ePlaceholder ePlaceholderFirst = ePlaceholder0; ePlaceholderFirst <= ePlaceholder11; ++ePlaceholderFirst)
+//            {
+//                xPlaceholderColourFirst = xPlaceholderColoursFirstRound[ePlaceholderFirst];
+//                if (prvDoColoursMatch(xPlaceholderColourFirst, xEmptyPlaceholderColour))
+//                {
+//                    continue;
+//                }
+//                if (prvDoColoursMatch(xPlaceholderColourFirst, xPlaceholderColourSecond))
+//                {
+//                    ePlaceholdersFrom[xPlaceholdersIndex] = ePlaceholderSecond;
+//                    ePlaceholdersTo[xPlaceholdersIndex] = ePlaceholderFirst;
+//                    ++xPlaceholdersIndex;
+//                    xMatchingPlaceholderColour = 1;
+//                    break;
+//                }
+//            }
+//            if (!xMatchingPlaceholderColour)
+//            {
+//                /* Terminate. */
+//                while (1);
+//            }
+//        }
+//
         /* Move all arms to their rest position. */
         xArmServerMessage.eArms = ALL_ARMS;
         xArmServerMessage.eMovement = eRest;
@@ -107,6 +107,14 @@ unsigned char ucDisplaceInformationBuffered[64];
         xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
         ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
+        ePlaceholdersFrom[0] = octoT0;
+        ePlaceholdersFrom[1] = octoT2;
+        ePlaceholdersFrom[2] = octoT4;
+        ePlaceholdersFrom[3] = octoT6;
+        ePlaceholdersTo[0] = octoF2;
+        ePlaceholdersTo[1] = octoF3;
+        ePlaceholdersTo[2] = octoF0;
+        ePlaceholdersTo[3] = octoF1;
 
         /* Use algorithm to find displace information based on the begin and end positions of the balls. Process all of the displace information by requesting the arm server to move certain arms. Each displace information contains information about which arm to displace a ball and the rotation (goal position) in degrees the arm needs to turn to the 'from' placeholder and to the 'to' placeholder. The arms that are allowed to displace a ball are buffered into a round and executed at the same time. */
         uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
