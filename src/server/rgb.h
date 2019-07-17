@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /* Sensor count */
-#define SENSORCOUNT 0
+#define SENSORCOUNT 12
 
 /* addr */
 #define TCS34725_ADDRESS    (0x29)      /* < I2C address */

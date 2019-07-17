@@ -10,10 +10,10 @@ QueueHandle_t xUartMessageQueue;
 static QueueHandle_t xUartSignalQueue;
 static UBaseType_t uxSignal;
 
-static unsigned char ucTx[16];
-static unsigned char ucRx[16];
-static unsigned char ucTxBytes = 0;
-static unsigned char ucRxBytes = 0;
+volatile static unsigned char ucTx[16];
+volatile static unsigned char ucRx[16];
+volatile static unsigned char ucTxBytes = 0;
+volatile static unsigned char ucRxBytes = 0;
 
 void vTaskUart( void * pvParameters )
 {
@@ -144,17 +144,17 @@ UBaseType_t uxResponse;
 
 void USART1_IRQ_handler()
 {
-    static unsigned char index = 0;
-    UBaseType_t uxSr = USART1->SR;
-    UBaseType_t uxDr = USART1->DR;
-    UBaseType_t uxCr1 = USART1->CR1;
-    UBaseType_t uxTxeie = uxCr1 & USART_CR1_TXEIE;
-    UBaseType_t uxTcie = uxCr1 & USART_CR1_TCIE;
-    UBaseType_t uxRxneie = uxCr1 & USART_CR1_RXNEIE;
-    UBaseType_t uxTxe = uxSr & USART_SR_TXE;
-    UBaseType_t uxTc = uxSr & USART_SR_TC;
-    UBaseType_t uxRxne = uxSr & USART_SR_RXNE;
-    UBaseType_t uxOre = uxSr & USART_SR_ORE;
+    volatile static unsigned char index = 0;
+    volatile UBaseType_t uxSr = USART1->SR;
+    volatile UBaseType_t uxDr = USART1->DR;
+    volatile UBaseType_t uxCr1 = USART1->CR1;
+    volatile UBaseType_t uxTxeie = uxCr1 & USART_CR1_TXEIE;
+    volatile UBaseType_t uxTcie = uxCr1 & USART_CR1_TCIE;
+    volatile UBaseType_t uxRxneie = uxCr1 & USART_CR1_RXNEIE;
+    volatile UBaseType_t uxTxe = uxSr & USART_SR_TXE;
+    volatile UBaseType_t uxTc = uxSr & USART_SR_TC;
+    volatile UBaseType_t uxRxne = uxSr & USART_SR_RXNE;
+    volatile UBaseType_t uxOre = uxSr & USART_SR_ORE;
 
     if (uxTcie && uxTc)
     {

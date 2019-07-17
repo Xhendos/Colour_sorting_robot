@@ -6,6 +6,7 @@
 #include "ax.h"
 #include "octo.h"
 #include "algo.h"
+#include "uart.h"
 #include "arm_server.h"
 #include "rgb_server.h"
 
@@ -43,6 +44,9 @@ volatile UBaseType_t uxButtonState;
 
     while (1)
     {
+        memset(ePlaceholdersFrom, 0, sizeof(ePlaceholdersFrom));
+        memset(ePlaceholdersTo, 0, sizeof(ePlaceholdersTo));
+
         while (!(uxArmServerDoneConfiguring && uxRgbServerDoneConfiguring));
 
         GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BR11);
@@ -56,10 +60,13 @@ volatile UBaseType_t uxButtonState;
         /* Request the colour of each rgb sensor from the rgb server. The user will have put balls on placeholders before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
         {
-        //    xRgbServerMessage.ePlaceholder = ePlaceholder;
-        //    xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
-        //    xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
+            xRgbServerMessage.ePlaceholder = ePlaceholder;
+            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
+            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
         }
+			
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        
 
         GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BR11);
 
@@ -76,6 +83,7 @@ volatile UBaseType_t uxButtonState;
             xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
             xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
         }
+        
 
         /* Terminate if there are colours from the second request that do not match any of the first request. */
         for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
@@ -105,7 +113,6 @@ volatile UBaseType_t uxButtonState;
             if (!xMatchingPlaceholderColour)
             {
                 GPIOB->BSRR = (GPIO_BSRR_BR10 | GPIO_BSRR_BS11);
-
                 /* Terminate. */
                 while (1);
             }
@@ -119,19 +126,10 @@ volatile UBaseType_t uxButtonState;
         xQueueSend( xArmServerMessageQueue, &xArmServerMessage, portMAX_DELAY );
         ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
 
-        ePlaceholdersFrom[0] = octoT0;
-        ePlaceholdersFrom[1] = octoT2;
-        ePlaceholdersFrom[2] = octoT4;
-        ePlaceholdersFrom[3] = octoT6;
-        ePlaceholdersTo[0] = octoF2;
-        ePlaceholdersTo[1] = octoF3;
-        ePlaceholdersTo[2] = octoF0;
-        ePlaceholdersTo[3] = octoF1;
-
         /* Use algorithm to find displace information based on the begin and end positions of the balls. Process all of the displace information by requesting the arm server to move certain arms. Each displace information contains information about which arm to displace a ball and the rotation (goal position) in degrees the arm needs to turn to the 'from' placeholder and to the 'to' placeholder. The arms that are allowed to displace a ball are buffered into a round and executed at the same time. */
         uxAmountOfDisplaceInformation = usAlgorithmEntryPoint( ePlaceholdersFrom, ePlaceholdersTo, xDisplaceInformations );
         uxAmountOfExecutedDisplaceInformation = 0;
-        memset(&ucDisplaceInformationBuffered, 0, sizeof(ucDisplaceInformationExecuted));
+        memset(&ucDisplaceInformationBuffered, 0, sizeof(ucDisplaceInformationBuffered));
         memset(&ucDisplaceInformationExecuted, 0, sizeof(ucDisplaceInformationExecuted));
 
         do
@@ -197,12 +195,13 @@ volatile UBaseType_t uxButtonState;
                 }
             }
         } while (uxAmountOfExecutedDisplaceInformation != uxAmountOfDisplaceInformation);
+
     }
 }
 
 static BaseType_t prvDoColoursMatch(RgbColours_t xColourA, RgbColours_t xColourB)
 {
-    static UBaseType_t uxMargin = 8;
+    static UBaseType_t uxMargin = 15;
 
     if (abs(xColourA.ucRed - xColourB.ucRed) > uxMargin)
     {

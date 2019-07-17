@@ -24,7 +24,7 @@ typedef struct xMESSAGE_I2C
     uint8_t *pucReadBytes;          /* Bytes received from the slave */
 } MessageI2c;
 
-static _Bool xI2cPeripheralBusy = 0;
+volatile static _Bool xI2cPeripheralBusy = 0;
 static MessageI2c xI2cIsrMessage;
 static MessageI2c xI2cDummyMessage;
 QueueHandle_t xI2cToIsr;
@@ -216,7 +216,7 @@ RgbColours_t xColours;
  */
 void prvRgbInit()
 {
-int uI;  
+volatile int uI;  
 MessageI2c xConfigureSensor;
 MessageI2c xI2cResponse;
 uint8_t ucI2cResult[2];
@@ -588,7 +588,6 @@ uint8_t ucI2cWrite[2];
     if(xQueueSend(xI2cToIsr, &xDeviceId, portMAX_DELAY) != pdTRUE)
         return 0;
     I2C1->CR1 |= (1 << I2C_CR1_START_Pos);
-
 
     if(xQueueReceive(xI2cFromIsr, &xI2cResponse, portMAX_DELAY) != pdTRUE)
         return 0;

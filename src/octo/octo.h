@@ -1,7 +1,7 @@
 #ifndef _OCTO_H
 #define _OCTO_H
 
-//#define octoNO_OPTIMAZATION
+#define octoNO_OPTIMIZATION
 
 #define octoMOTOR_A_INDEX           ( 0 )
 #define octoMOTOR_B_INDEX           ( 1 )

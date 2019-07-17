@@ -138,10 +138,10 @@ int main(void)
     I2C1->CR1 |= I2C_CR1_PE;                            /* Turn on the peripheral */
 
     NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS);         /* https://www.freertos.org/RTOS-Cortex-M3-M4.html */
-    NVIC_SetPriority(I2C1_EV_IRQn, 2);
+    NVIC_SetPriority(I2C1_EV_IRQn, 3);
     NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
     NVIC_EnableIRQ(I2C1_EV_IRQn);
-    NVIC_SetPriority(USART1_IRQn, 0);
+    NVIC_SetPriority(USART1_IRQn, 2);
     NVIC_ClearPendingIRQ(USART1_IRQn);
     NVIC_EnableIRQ(USART1_IRQn);
 
