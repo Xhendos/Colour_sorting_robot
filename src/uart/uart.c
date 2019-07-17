@@ -7,6 +7,8 @@
 
 TaskHandle_t xUartTask;
 QueueHandle_t xUartMessageQueue;
+static QueueHandle_t xUartSignalQueue;
+static UBaseType_t uxSignal;
 
 static unsigned char ucTx[16];
 static unsigned char ucRx[16];
@@ -22,6 +24,13 @@ UBaseType_t uxResponse;
     xUartMessageQueue = xQueueCreate(uartSERVER_MESSAGE_QUEUE_SIZE, sizeof(UartMessage_t));
 
     if( xUartMessageQueue == NULL )
+    {
+        /* Message queue did not get created. */
+    }
+
+    xUartSignalQueue = xQueueCreate(1, sizeof(UBaseType_t));
+
+    if( xUartSignalQueue == NULL )
     {
         /* Message queue did not get created. */
     }
@@ -115,7 +124,8 @@ UBaseType_t uxResponse;
         /* Set direction to TX. Enable TXE interrupts to get into the interrupt handler. Wait on a notify from the interrupt handler when it is done receiving the status packet. */
         GPIOB->BSRR = GPIO_BSRR_BS0;
         USART1->CR1 |= USART_CR1_TXEIE;
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        xQueueReceive(xUartSignalQueue, &uxSignal, portMAX_DELAY);
+        //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         if (xInstructionPacket.eInstructionType == eRead)
         {
@@ -153,7 +163,8 @@ void USART1_IRQ_handler()
 
         if (ucRxBytes == 0)
         {
-            vTaskNotifyGiveFromISR(xUartTask, NULL);
+            xQueueSendFromISR(xUartSignalQueue, &uxSignal, NULL);
+            //vTaskNotifyGiveFromISR(xUartTask, NULL);
         }
         else
         {
@@ -186,7 +197,8 @@ void USART1_IRQ_handler()
         {
             USART1->CR1 &= ~(USART_CR1_RXNEIE);
             index = 0;
-            vTaskNotifyGiveFromISR(xUartTask, NULL);
+            xQueueSendFromISR(xUartSignalQueue, &uxSignal, NULL);
+            //vTaskNotifyGiveFromISR(xUartTask, NULL);
         }
     }
 

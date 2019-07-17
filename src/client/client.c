@@ -37,17 +37,21 @@ unsigned char ucDisplaceInformationExecuted[64];
 unsigned char ucDisplaceInformationBuffered[64];
 volatile UBaseType_t uxButtonState;
 
-
     xQueueForRgbServerResponse = xQueueCreate( 1, sizeof(RgbColours_t) );
 
     xRgbServerMessage.xQueueDestination = xQueueForRgbServerResponse;
 
-
     while (1)
     {
+        while (!(uxArmServerDoneConfiguring && uxRgbServerDoneConfiguring));
+
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BR11);
+
         /* Wait for button press. */
         do { uxButtonState = GPIOB->IDR & GPIO_IDR_IDR8; } while (uxButtonState);
         do { uxButtonState = !(GPIOB->IDR & GPIO_IDR_IDR8); } while (uxButtonState);
+
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BS11);
 
         /* Request the colour of each rgb sensor from the rgb server. The user will have put balls on placeholders before pressing the button. */
         for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
@@ -57,50 +61,56 @@ volatile UBaseType_t uxButtonState;
         //    xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursFirstRound[ePlaceholder], portMAX_DELAY );
         }
 
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BR11);
+
         /* Wait for button press. */
         do { uxButtonState = GPIOB->IDR & GPIO_IDR_IDR8; } while (uxButtonState);
         do { uxButtonState = !(GPIOB->IDR & GPIO_IDR_IDR8); } while (uxButtonState);
 
+        GPIOB->BSRR = (GPIO_BSRR_BS10 | GPIO_BSRR_BS11);
+
         /* Request the colour of each rgb sensor from the rgb server. The user might have moved some balls before pressing the button. */
-//        for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
-//        {
-//            xRgbServerMessage.ePlaceholder = ePlaceholder;
-//            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
-//            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
-//        }
-//
-//        /* Terminate if there are colours from the second request that do not match any of the first request. */
-//        for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
-//        {
-//            xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
-//            if (prvDoColoursMatch(xPlaceholderColourSecond, xEmptyPlaceholderColour))
-//            {
-//                continue;
-//            }
-//            xMatchingPlaceholderColour = 0;
-//            for (ePlaceholder ePlaceholderFirst = ePlaceholder0; ePlaceholderFirst <= ePlaceholder11; ++ePlaceholderFirst)
-//            {
-//                xPlaceholderColourFirst = xPlaceholderColoursFirstRound[ePlaceholderFirst];
-//                if (prvDoColoursMatch(xPlaceholderColourFirst, xEmptyPlaceholderColour))
-//                {
-//                    continue;
-//                }
-//                if (prvDoColoursMatch(xPlaceholderColourFirst, xPlaceholderColourSecond))
-//                {
-//                    ePlaceholdersFrom[xPlaceholdersIndex] = ePlaceholderSecond;
-//                    ePlaceholdersTo[xPlaceholdersIndex] = ePlaceholderFirst;
-//                    ++xPlaceholdersIndex;
-//                    xMatchingPlaceholderColour = 1;
-//                    break;
-//                }
-//            }
-//            if (!xMatchingPlaceholderColour)
-//            {
-//                /* Terminate. */
-//                while (1);
-//            }
-//        }
-//
+        for (ePlaceholder ePlaceholder = ePlaceholder0; ePlaceholder <= ePlaceholder11; ++ePlaceholder)
+        {
+            xRgbServerMessage.ePlaceholder = ePlaceholder;
+            xQueueSend( xToRgbServer, &xRgbServerMessage, portMAX_DELAY );
+            xQueueReceive( xQueueForRgbServerResponse, &xPlaceholderColoursSecondRound[ePlaceholder], portMAX_DELAY );
+        }
+
+        /* Terminate if there are colours from the second request that do not match any of the first request. */
+        for (ePlaceholder ePlaceholderSecond = ePlaceholder0; ePlaceholderSecond <= ePlaceholder11; ++ePlaceholderSecond)
+        {
+            xPlaceholderColourSecond = xPlaceholderColoursSecondRound[ePlaceholderSecond];
+            if (prvDoColoursMatch(xPlaceholderColourSecond, xEmptyPlaceholderColour))
+            {
+                continue;
+            }
+            xMatchingPlaceholderColour = 0;
+            for (ePlaceholder ePlaceholderFirst = ePlaceholder0; ePlaceholderFirst <= ePlaceholder11; ++ePlaceholderFirst)
+            {
+                xPlaceholderColourFirst = xPlaceholderColoursFirstRound[ePlaceholderFirst];
+                if (prvDoColoursMatch(xPlaceholderColourFirst, xEmptyPlaceholderColour))
+                {
+                    continue;
+                }
+                if (prvDoColoursMatch(xPlaceholderColourFirst, xPlaceholderColourSecond))
+                {
+                    ePlaceholdersFrom[xPlaceholdersIndex] = ePlaceholderSecond;
+                    ePlaceholdersTo[xPlaceholdersIndex] = ePlaceholderFirst;
+                    ++xPlaceholdersIndex;
+                    xMatchingPlaceholderColour = 1;
+                    break;
+                }
+            }
+            if (!xMatchingPlaceholderColour)
+            {
+                GPIOB->BSRR = (GPIO_BSRR_BR10 | GPIO_BSRR_BS11);
+
+                /* Terminate. */
+                while (1);
+            }
+        }
+
         /* Move all arms to their rest position. */
         xArmServerMessage.eArms = ALL_ARMS;
         xArmServerMessage.eMovement = eRest;
