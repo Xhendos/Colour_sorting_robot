@@ -1,21 +1,25 @@
 #ifndef _AX_H
 #define _AX_H
 
-#define axDEGREES_UNIT        (0.29)
-#define axRPM_UNIT            (0.111)
-#define axDEGREES_TO_UNITS(x) ((unsigned short int)(x / axDEGREES_UNIT))
-#define axRPM_TO_UNITS(x)     ((unsigned short int)(x / axRPM_UNIT))
+#define axBROADCAST_ID          ( 254 )
+
+#define axDEGREES_UNIT          ( 0.29 )
+#define axRPM_UNIT              ( 0.111 )
+#define axDEGREES_TO_UNITS(x)   ( (unsigned short int)(x / axDEGREES_UNIT) )
+#define axRPM_TO_UNITS(x)       ( (unsigned short int)(x / axRPM_UNIT) )
+
+#define axINSTRUCTION_PACKET_LENGTH_CONSTANT    ( 2 )
 
 typedef enum {
-	ePing = 1,
+	//ePing = 1,
 	eRead = 2,
 	eWrite = 3,
 	eRegWrite = 4,
 	eAction = 5,
-	eFactoryReset = 6,
-	eReboot = 8,
-	eSyncWrite = 131,
-	eBulkRead = 146,
+	//eFactoryReset = 6,
+	//eReboot = 8,
+	//eSyncWrite = 131,
+	//eBulkRead = 146,
 } eInstructionType;
 
 typedef enum {
@@ -52,6 +56,8 @@ typedef enum {
 	eLock = 47,
 	ePunch = 48,
 } eRegister;
+
+unsigned char ucByteSize(eRegister eRegister);
 
 #endif /* _AX_H */
 

@@ -14,7 +14,6 @@ uint8_t prvGetRed(uint8_t ucPosition);
 uint8_t prvGetGreen(uint8_t ucPosition);
 uint8_t prvGetBlue(uint8_t ucPosition);
 
-
 typedef struct xMESSAGE_I2C
 {
     uint8_t ucAddress;              /* I2C slave address */
@@ -30,6 +29,7 @@ static MessageI2c xI2cIsrMessage;
 static MessageI2c xI2cDummyMessage;
 QueueHandle_t xI2cToIsr;
 QueueHandle_t xI2cFromIsr;
+TaskHandle_t xRgbServerTask;
 
 void I2C1_EV_IRQ_handler(void)
 {
@@ -193,13 +193,13 @@ RgbColours_t xColours;
 
     while(1)
     {
-//        if(xQueueReceive(xToRgbServer, &xMessage, portMAX_DELAY) != pdTRUE)
-//            continue;
+        if(xQueueReceive(xToRgbServer, &xMessage, portMAX_DELAY) != pdTRUE)
+            continue;
 
         xColours = prvGetRgb(xMessage.ePlaceholder);
    
-//        if(xQueueSend(xMessage.xQueueDestination, &xColours, portMAX_DELAY) != pdTRUE)
-//            continue;  
+        if(xQueueSend(xMessage.xQueueDestination, &xColours, portMAX_DELAY) != pdTRUE)
+            continue;  
     }
 }
 /*-----------------------------------------------------------*/ 
@@ -349,9 +349,9 @@ RgbColours_t xColours;
     prvRgbSetPin(ucPosition);
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    xColours.ulRed = prvGetRed(ucPosition);
-    xColours.ulGreen = prvGetGreen(ucPosition);
-    xColours.ulBlue = prvGetBlue(ucPosition);
+    xColours.ucRed = prvGetRed(ucPosition);
+    xColours.ucGreen = prvGetGreen(ucPosition);
+    xColours.ucBlue = prvGetBlue(ucPosition);
     
     prvRgbResetPins();
     return xColours;

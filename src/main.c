@@ -7,6 +7,7 @@
 #include "stm32f103xb.h"
 #include "i2c.h"
 #include "manager.h"
+#include "uart.h"
 
 int main(void)
 {
@@ -127,27 +128,19 @@ int main(void)
 
     I2C1->CR1 = 0;
     I2C1->CR1 |= I2C_CR1_PE;                            /* Turn on the peripheral */
-   
-    /* Create and initialise queues */
-    //xI2cFromIsr = xQueueCreate(1, sizeof(MessageI2c));   
-    //xI2cToIsr = xQueueCreate(1, sizeof(MessageI2c));
 
- //   if(xI2cFromIsr == NULL || xI2cToIsr == NULL)
- //     return -2;                              /* No sufficient memory to create the queue */
-
-    NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS); /* https://www.freertos.org/RTOS-Cortex-M3-M4.html */
+    NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS);         /* https://www.freertos.org/RTOS-Cortex-M3-M4.html */
     NVIC_SetPriority(I2C1_EV_IRQn, 2);
     NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
-    NVIC_EnableIRQ(I2C1_EV_IRQn);   
+    NVIC_EnableIRQ(I2C1_EV_IRQn);
+    NVIC_SetPriority(USART1_IRQn, 0);
+    NVIC_ClearPendingIRQ(USART1_IRQn);
+    NVIC_EnableIRQ(USART1_IRQn);
 
-    I2C1->CR1 |= (1 << I2C_CR1_START_Pos);
- 
     xTaskCreate(vTaskManager, "manager", 128, NULL, configMAX_PRIORITIES - 1, NULL);
     vTaskStartScheduler();
-     
-    //xTaskCreate(rgb_task, "rgb_task", 500, NULL, 3, NULL);
-    //vTaskStartScheduler();                      /* Start the FreeRTOS scheduler */
 
-    return -1;                                  /* We should never hit this line */
+    return -1;
 }
 /*-----------------------------------------------------------*/
+

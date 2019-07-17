@@ -45,11 +45,11 @@ static int lCheckPos( ePlaceholder * pePosition, int * plRoundPosition, size_t x
 static int lCheckFinished( ePlaceholder * peCheckArray );
 static void vEdgeToDisplaceInformation( ePlaceholder ePlaceholderFrom, ePlaceholder ePlaceholderTo, DisplaceInformation_t * pxDisplaceInformation );
 
-static int skip, MAXROUNDS = 0;
+static int skip, MAXROUNDS;
 static unsigned short ucDisplaceInformationIndex;
 static DisplaceInformation_t *  pxDisplaceInformation;
 
-void vAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t pxDisplaceInformations[64] )
+unsigned short usAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlaceholdersTo[4], DisplaceInformation_t pxDisplaceInformations[64] )
 {
     int temp[MAX_BALL];
     int next[MAX_BALL];
@@ -59,6 +59,9 @@ void vAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlac
     int pos_check = 0;
     int check1;
     int loop;
+
+    skip = 0;
+    MAXROUNDS = 0;
 
     ucDisplaceInformationIndex = 0;
     pxDisplaceInformation = pxDisplaceInformations;
@@ -102,6 +105,8 @@ void vAlgorithmEntryPoint( ePlaceholder ePlaceholdersFrom[4], ePlaceholder ePlac
             MAXROUNDS++;
         }
     } while(check != 1 && MAXROUNDS <= 5);
+
+    return ucDisplaceInformationIndex;
 }
 
 static int lCheckFinished(ePlaceholder * eCheckArray)
@@ -176,9 +181,6 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
     int count;
     int mindistance;
     int nextnode;
-    int i;
-    int j;
-    int k;
     int previous;
     int begin_value;
     int end_value;
@@ -190,9 +192,9 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
 	//pred[] stores the predecessor of each node
 	//count gives the number of nodes seen so far
 	//create the cost matrix
-	for(i = 0; i < n; i++)
+	for(int i = 0; i < n; i++)
     {
-		for(j = 0; j < n; j++)
+		for(int j = 0; j < n; j++)
         {
 			if(G[i][j] == 0)
             {
@@ -206,7 +208,7 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
     }
 
     //initialize pred[],distance[] and visited[]
-	for(i = 0; i < n; i++)
+	for(int i = 0; i < n; i++)
 	{
 	    distance[i] = cost[end_value][i];
 	    pred[i] = end_value;
@@ -225,7 +227,7 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
         nextnode = -1;
 
 	    //nextnode gives the node at minimum distance
-		for(i = 0; i < n; i++)
+		for(int i = 0; i < n; i++)
         {
 	        if(distance[i] < mindistance && !visited[i])
 		    {
@@ -236,7 +238,7 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
 
 		//check if a better path exists through nextnode
 		visited[nextnode] = 1;
-		for(i = 0; i < n; i++)
+		for(int i = 0; i < n; i++)
         {
 		    if(!visited[i])
             {
@@ -251,7 +253,7 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
 	}
 
 	//the path and distance of each node
-    for(i = 0; i < n; i++)
+    for(int i = 0; i < n; i++)
     {
 	    if(i != end_value)
 	    {
@@ -259,15 +261,12 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
 	        {
 	            previous = i;
 
-	            j = i;
-		        j = pred[j];
-
                 temp = plNextMove[lIndex];
-                plNextMove[lIndex] = j;
+                plNextMove[lIndex] = pred[i];
 
-                for(k = 0; k < MAX_BALL; k++)
+                for(int k = 0; k < MAX_BALL; k++)
                 {
-                    if (j == plNextMove[k] && k != lIndex)
+                    if (i == plNextMove[k] && k != lIndex)
                     {
                         skip++;
                         plNextMove[lIndex] = temp;
@@ -281,11 +280,11 @@ int lDijkstra( ePlaceholder * peBegin, int lIndex, int * plNextMove, size_t xSiz
                     return 100;
                 }
 
-                vEdgeToDisplaceInformation(previous, j, &pxDisplaceInformation[ucDisplaceInformationIndex++]);
+                vEdgeToDisplaceInformation(previous, pred[i], &pxDisplaceInformation[ucDisplaceInformationIndex++]);
 
-	            if(j != end_value)
+	            if(pred[i] != end_value)
 	            {
-	                return j;
+	                return pred[i];
 	            }
 	            else
                 {

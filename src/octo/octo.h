@@ -1,6 +1,8 @@
 #ifndef _OCTO_H
 #define _OCTO_H
 
+#define octoNO_OPTIMIZATION
+
 #define octoMOTOR_A_INDEX           ( 0 )
 #define octoMOTOR_B_INDEX           ( 1 )
 #define octoMOTOR_C_INDEX           ( 2 )
@@ -52,7 +54,6 @@ typedef enum {
     eArm5,
     eArm6,
     eArm7,
-    eArm8,
 } eArm;
 
 typedef enum {

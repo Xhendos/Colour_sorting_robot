@@ -18,14 +18,14 @@ typedef struct xRGBSERVERMESSAGE
 
 typedef struct xRGB
 {
-    uint32_t ulRed;
-    uint32_t ulGreen;
-    uint32_t ulBlue;
+    uint8_t ucRed;
+    uint8_t ucGreen;
+    uint8_t ucBlue;
 } RgbColours_t;
 
 extern QueueHandle_t xFromRgbServer;
 extern QueueHandle_t xToRgbServer;
-extern TaskHandle_t xTt;
+extern TaskHandle_t xRgbServerTask;
 
 void vTaskRgbServer( void * pvParameters );
 
